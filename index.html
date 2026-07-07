@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>AVG – UI Requirements (DATNETAV-845) Klickdummy</title>
+<style>
+  :root{
+    --primary:#1565c0;
+    --primary-dark:#0d47a1;
+    --primary-light:#e3f2fd;
+    --accent:#00897b;
+    --bg:#f4f6f8;
+    --panel:#ffffff;
+    --border:#dfe3e8;
+    --text:#1c2733;
+    --text-muted:#647184;
+    --ok:#2e7d32;
+    --ok-bg:#e8f5e9;
+    --warn:#b26a00;
+    --warn-bg:#fff3e0;
+    --err:#c62828;
+    --err-bg:#fdecea;
+    --info:#0d47a1;
+    --info-bg:#e3f2fd;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Roboto","Segoe UI",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+  }
+  header.app{
+    background:var(--primary-dark);
+    color:#fff;
+    padding:14px 24px;
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  header.app h1{font-size:17px;margin:0;font-weight:500;letter-spacing:.2px;}
+  header.app .ticket{font-size:12px;opacity:.8;font-family:monospace;}
+  header.app .env{margin-left:auto;font-size:11px;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:12px;}
+
+  nav.tabs{
+    display:flex;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    overflow-x:auto;
+    position:sticky;top:0;z-index:20;
+  }
+  nav.tabs button{
+    appearance:none;border:none;background:none;
+    padding:13px 18px;
+    font-size:13px;
+    font-family:inherit;
+    color:var(--text-muted);
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+  }
+  nav.tabs button:hover{color:var(--primary);background:var(--primary-light);}
+  nav.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
+
+  main{padding:22px 32px 60px;max-width:none;margin:0;}
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-bottom:18px;
+  }
+  .panel h2{font-size:15px;margin:0 0 4px;font-weight:500;}
+  .panel .sub{color:var(--text-muted);font-size:12.5px;margin:0 0 16px;line-height:1.5;}
+  .tabview{display:none;}
+  .tabview.active{display:block;}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .toolbar .search{
+    display:flex;align-items:center;gap:6px;
+    border:1px solid var(--border);border-radius:20px;padding:6px 12px;background:#fbfbfc;min-width:220px;
+  }
+  .toolbar .search input{border:none;outline:none;background:none;font-size:13px;flex:1;font-family:inherit;}
+  .spacer{flex:1;}
+
+  button.btn{
+    font-family:inherit;font-size:12.5px;font-weight:500;
+    border-radius:4px;border:1px solid transparent;padding:8px 16px;
+    cursor:pointer;letter-spacing:.2px;
+  }
+  button.btn.primary{background:var(--primary);color:#fff;}
+  button.btn.primary:hover{background:var(--primary-dark);}
+  button.btn.ghost{background:none;border-color:var(--border);color:var(--text);}
+  button.btn.ghost:hover{border-color:var(--primary);color:var(--primary);}
+  button.btn.danger-ghost{background:none;border-color:var(--border);color:var(--err);}
+  button.btn.danger-ghost:hover{border-color:var(--err);background:var(--err-bg);}
+  button.btn.small{padding:5px 10px;font-size:12px;}
+  button.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  table.data{width:100%;border-collapse:collapse;font-size:13px;}
+  table.data th{
+    text-align:left;padding:9px 10px;background:#f7f8fa;color:var(--text-muted);
+    font-weight:500;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;
+    border-bottom:1px solid var(--border);position:relative;white-space:nowrap;
+  }
+  table.data th.sortable{cursor:pointer;user-select:none;}
+  table.data th.sortable:hover{color:var(--primary);}
+  table.data td{padding:9px 10px;border-bottom:1px solid #eef0f2;vertical-align:middle;}
+  table.data tbody tr:hover{background:#fafcff;}
+  table.data tr.selected{background:var(--primary-light);}
+  .col-actions{white-space:nowrap;text-align:right;}
+
+  .chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:500;}
+  .chip.ok{background:var(--ok-bg);color:var(--ok);}
+  .chip.warn{background:var(--warn-bg);color:var(--warn);}
+  .chip.err{background:var(--err-bg);color:var(--err);}
+  .chip.info{background:var(--info-bg);color:var(--info);}
+  .chip.neutral{background:#eceff1;color:#546070;}
+
+  .pagination{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:12px;color:var(--text-muted);font-size:12.5px;}
+  .pagination select{font-family:inherit;font-size:12.5px;border:1px solid var(--border);border-radius:4px;padding:4px 6px;}
+  .pagination button{border:1px solid var(--border);background:#fff;border-radius:4px;padding:4px 9px;cursor:pointer;}
+  .pagination button:disabled{opacity:.4;cursor:not-allowed;}
+
+  .layout-split{display:grid;grid-template-columns:420px 1fr;gap:18px;align-items:start;}
+  @media(max-width:1000px){.layout-split{grid-template-columns:1fr;}}
+  .layout-split-routen{display:grid;grid-template-columns:minmax(0,880px) 1fr;gap:18px;align-items:start;}
+  @media(max-width:1300px){.layout-split-routen{grid-template-columns:1fr;}}
+
+  .field-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+  .field-row label{font-size:12px;color:var(--text-muted);font-weight:500;}
+  .field-row input[type=text],.field-row input[type=number],.field-row input[type=date],.field-row select{
+    font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:4px;outline:none;
+  }
+  .field-row input:focus,.field-row select:focus{border-color:var(--primary);}
+  .field-row.checkbox{flex-direction:row;align-items:center;}
+  .field-row.checkbox input{margin-right:8px;}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;}
+  .hint{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+
+  .autocomplete{position:relative;}
+  .autocomplete .results{
+    position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);
+    border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;z-index:30;display:none;
+  }
+  .autocomplete .results.show{display:block;}
+  .autocomplete .results div{padding:8px 12px;cursor:pointer;font-size:12.5px;border-bottom:1px solid #f2f2f2;}
+  .autocomplete .results div:hover{background:var(--primary-light);}
+  .autocomplete .results div b{color:var(--primary);}
+
+  .radio-group{display:flex;gap:18px;margin-bottom:16px;}
+  .radio-option{
+    border:1px solid var(--border);border-radius:6px;padding:12px 16px;flex:1;cursor:pointer;
+    display:flex;align-items:flex-start;gap:10px;
+  }
+  .radio-option.selected{border-color:var(--primary);background:var(--primary-light);}
+  .radio-option input{margin-top:2px;}
+  .radio-option .lbl{font-weight:500;font-size:13px;}
+  .radio-option .desc{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+
+  .route-header-card{background:#fbfcfe;border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:16px;}
+  .empty-state{text-align:center;color:var(--text-muted);padding:60px 20px;font-size:13px;}
+  .empty-state .big{font-size:32px;margin-bottom:8px;}
+
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(20,30,40,.45);display:none;align-items:center;justify-content:center;z-index:100;
+  }
+  .modal-backdrop.show{display:flex;}
+  .modal{background:#fff;border-radius:8px;padding:22px 24px;width:480px;max-width:92vw;box-shadow:0 20px 50px rgba(0,0,0,.25);max-height:88vh;overflow-y:auto;}
+  .modal h3{margin:0 0 4px;font-size:15px;}
+  .modal .sub{color:var(--text-muted);font-size:12px;margin:0 0 16px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+
+  .badge-tab-count{background:#eceff1;color:var(--text-muted);border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:6px;}
+  .note-banner{background:var(--warn-bg);border:1px solid #ffe0b2;color:var(--warn);border-radius:6px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#26313f;color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;
+    box-shadow:0 8px 22px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;
+    z-index:200;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+  .footer-note{color:var(--text-muted);font-size:11.5px;text-align:center;margin-top:20px;}
+</style>
+</head>
+<body>
+
+<header class="app">
+  <h1>AVG&nbsp;·&nbsp;IBIS-Archiv &amp; Stammdatenkonfiguration</h1>
+  <span class="ticket">DATNETAV-845 · UI Requirements</span>
+  <span class="env">Klickdummy · Demo-Daten</span>
+</header>
+
+<nav class="tabs" id="tabNav"></nav>
+
+<main id="tabContainer"></main>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================= DATA ============================= */
+
+const ansageOptions = [
+  {num:"2086", text:"Dunantstraße"},
+  {num:"2087", text:"Karlsruhe Hauptbahnhof"},
+  {num:"2101", text:"Rastatt Bahnhof"},
+  {num:"2144", text:"Baden-Baden"},
+  {num:"2201", text:"Achern"},
+  {num:"2340", text:"Offenburg"},
+  {num:"9999", text:"Funktionsansage – Türfreigabe"},
+];
+
+const zielcodeOptions = [
+  {code:"1041", line:"S1", dest:"Karlsruhe Albtalbahnhof"},
+  {code:"1042", line:"S1", dest:"Neuenburg (Baden)"},
+  {code:"1103", line:"S4", dest:"Öttingen West"},
+  {code:"1150", line:"S4", dest:"Achern"},
+  {code:"1207", line:"S7", dest:"Bad Wildbad"},
+  {code:"1301", line:"S8", dest:"Pforzheim Hbf"},
+  {code:"1450", line:"S31", dest:"Germersheim"},
+];
+
+let archiveRows = [
+  {datum:"05.07.2026 08:12", typ:"IBIS", status:"abgeschlossen", parameter:"Zeitraum 01.06.–30.06.2026"},
+  {datum:"03.07.2026 14:40", typ:"AUDIO", status:"export_laeuft", parameter:"–"},
+  {datum:"01.07.2026 09:03", typ:"PARAMETER", status:"pruefung_prod", parameter:"Release INIT 4.12"},
+];
+
+/* Routen-Sidebar: Spalten wie im Ticket-Screenshot (ID-Route, ID Stammroute bei Schwächung,
+   ID Stammroute des Flügelzugs, Position Zugteil bei Flügelung, Route Bezeichnung, NEU) */
+let routesList = [
+  {idRoute:"56.104", stammSchwaechung:"", stammFluegelzug:"", position:"", bezeichnung:"S71: RETL -> RBB", neu:true, linie:"S71", stationen:6, status:"freigegeben", geaendert:"28.06.2026"},
+  {idRoute:"56.105", stammSchwaechung:"25.290", stammFluegelzug:"", position:"", bezeichnung:"S81: RK -> TFS", neu:false, linie:"S81", stationen:5, status:"entwurf", geaendert:"01.07.2026"},
+  {idRoute:"56.134", stammSchwaechung:"", stammFluegelzug:"56.134", position:"1", bezeichnung:"S5 (S52): TPH -> RGE", neu:false, linie:"S5", stationen:4, status:"freigegeben", geaendert:"30.06.2026"},
+  {idRoute:"56.135", stammSchwaechung:"", stammFluegelzug:"56.134", position:"2", bezeichnung:"S5 (S53): TPH -> RWRTK", neu:false, linie:"S5", stationen:4, status:"freigegeben", geaendert:"30.06.2026"},
+];
+const ROUTE_COLS=[
+  {key:'idRoute', label:'ID-Route'},
+  {key:'stammSchwaechung', label:'ID Stammroute bei Schwächung'},
+  {key:'stammFluegelzug', label:'ID Stammroute des Flügelzugs'},
+  {key:'position', label:'Position Zugteil bei Flügelung'},
+  {key:'bezeichnung', label:'Route Bezeichnung'},
+  {key:'neu', label:'NEU'},
+];
+function sortRows(rows, key, dir){
+  return rows.slice().sort((a,b)=>{
+    let va=a[key], vb=b[key];
+    if(typeof va==='boolean') return (Number(va)-Number(vb))*dir;
+    if(va==='' && vb!=='') return 1*dir;
+    if(vb==='' && va!=='') return -1*dir;
+    return String(va).localeCompare(String(vb),'de',{numeric:true})*dir;
+  });
+}
+function sortArrow(state, col){ return state.key!==col ? '' : `<span style="font-size:10px;margin-left:3px;">${state.dir===1?'▲':'▼'}</span>`; }
+
+const routeStops = {
+  "56.104":[
+    {station:"Rastatt", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Rastatt Süd", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Muggensturm", haltart:"Durchfahrt", ansage:"", ziel:""},
+    {station:"Bischweier", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Baden-Baden West", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Baden-Baden", haltart:"Halt", ansage:"", ziel:""},
+  ],
+  "56.105":[
+    {station:"Karlsruhe Hbf", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Durlach", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Grötzingen", haltart:"Betriebshalt", ansage:"", ziel:""},
+    {station:"Pforzheim Hbf", haltart:"Bedarfshalt", ansage:"", ziel:""},
+    {station:"Tiefenbronn", haltart:"Halt", ansage:"", ziel:""},
+  ],
+  "56.134":[
+    {station:"Tübingen Hbf", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Reutlingen Hbf", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Reutlingen Gerberstraße", haltart:"Durchfahrt", ansage:"", ziel:""},
+    {station:"Reutlingen Gönningen", haltart:"Halt", ansage:"", ziel:""},
+  ],
+  "56.135":[
+    {station:"Tübingen Hbf", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Reutlingen Hbf", haltart:"Halt", ansage:"", ziel:""},
+    {station:"Reutlingen West", haltart:"Bedarfshalt", ansage:"", ziel:""},
+    {station:"Reutlingen Rommelsbach-Wallgraben", haltart:"Halt", ansage:"", ziel:""},
+  ],
+};
+
+
+let stationenRows = [
+  {id:"DNS", name:"Karlsruhe Dunantstraße", ansageNum:"2086", ansage:"Dunantstraße", innen:"Dunantstraße", fahrer:"Dunantstraße", multi:"Dunantstraße", tarif:"100", gps:false, radius:0, online:false},
+  {id:"KAH", name:"Karlsruhe Hauptbahnhof", ansageNum:"2087", ansage:"Karlsruhe Hauptbahnhof", innen:"Karlsruhe Hbf", fahrer:"Karlsruhe Hbf", multi:"Karlsruhe Hauptbahnhof", tarif:"100", gps:false, radius:0, online:true},
+  {id:"RAB", name:"Rastatt Bahnhof", ansageNum:"2101", ansage:"Rastatt Bahnhof", innen:"Rastatt Bf", fahrer:"Rastatt Bahnhof", multi:"Rastatt Bahnhof", tarif:"210", gps:false, radius:0, online:false},
+  {id:"BBA", name:"Baden-Baden", ansageNum:"2144", ansage:"Baden-Baden", innen:"Baden-Baden", fahrer:"Baden-Baden", multi:"Baden-Baden", tarif:"220", gps:true, radius:150, online:true},
+  {id:"ACH", name:"Achern", ansageNum:"2201", ansage:"Achern", innen:"Achern", fahrer:"Achern", multi:"Achern", tarif:"310", gps:false, radius:0, online:false},
+];
+
+let zielcodeRows = [
+  {code:"01041", linieNum:"41", linieText:"S1", zielNum:"104", zielText:"Karlsruhe Albtalbahnhof", multi:"Karlsruhe Albtalbahnhof", innen:"Albtalbahnhof", fahrer:"S1 Albtalbahnhof"},
+  {code:"01103", linieNum:"44", linieText:"S4", zielNum:"110", zielText:"Öttingen West", multi:"Öttingen West", innen:"Öttingen West", fahrer:"S4 Öttingen West"},
+  {code:"01150", linieNum:"44", linieText:"S4", zielNum:"115", zielText:"Achern", multi:"Achern", innen:"Achern", fahrer:"S4 Achern"},
+  {code:"01207", linieNum:"47", linieText:"S7", zielNum:"120", zielText:"Bad Wildbad", multi:"Bad Wildbad", innen:"Bad Wildbad", fahrer:"S7 Bad Wildbad"},
+];
+const ZIELCODE_TOTAL = 50000;
+
+function genLongList(n, prefix){
+  const arr=[];
+  for(let i=1;i<=n;i++){
+    arr.push({nummer:String(1000+i), text: i%37===0 ? "" : (prefix+" "+(1000+i))});
+  }
+  return arr;
+}
+let zieltexteRows = genLongList(9999, "Zieltext");
+let linientexteRows = genLongList(3700, "Linientext");
+
+let dispoRows = [
+  {gattung:"S", linie:"S1", ziel:"Karlsruhe Albtalbahnhof", code:"01041"},
+  {gattung:"S", linie:"S4", ziel:"Achern", code:"01150"},
+  {gattung:"E", linie:"RE 1", ziel:"Konstanz", code:"02210"},
+  {gattung:"S", linie:"S7", ziel:"Bad Wildbad", code:"01207"},
+];
+
+let parameterRows = [
+  {name:"door.release.timeout_ms", wert:"3500", editable:true, release:"INIT 4.12"},
+  {name:"gps.reacquire.interval_s", wert:"10", editable:true, release:"INIT 4.10"},
+  {name:"announcement.volume.default", wert:"70", editable:true, release:"INIT 4.09"},
+  {name:"vehicle.type.classifier", wert:"LRV2", editable:false, release:"INIT 4.12"},
+  {name:"display.brightness.night", wert:"35", editable:true, release:"INIT 4.11"},
+  {name:"ibis.export.retry_count", wert:"3", editable:false, release:"INIT 4.08"},
+];
+
+let playlistRows = [
+  {nummer:"9.941", fragment:1, filename:"9999.mp3"},
+  {nummer:"9.941", fragment:2, filename:"9941.mp3"},
+  {nummer:"110.001", fragment:1, filename:"9999.mp3"},
+  {nummer:"110.001", fragment:2, filename:"VordAnsage_1.mp3"},
+];
+
+/* ============================= HELPERS ============================= */
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function openModal(html){
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modalBackdrop').classList.remove('show');
+}
+document.getElementById('modalBackdrop').addEventListener('click',e=>{
+  if(e.target.id==='modalBackdrop') closeModal();
+});
+function statusChip(status){
+  const map={
+    "erstellt":["neutral","Task erstellt"],
+    "export_laeuft":["info","IBIS-Export läuft"],
+    "pruefung_prod":["warn","Zur Prüfung Prod.-System"],
+    "abgeschlossen":["ok","Abgeschlossen"],
+    "fehler":["err","Fehlgeschlagen"],
+    "freigegeben":["ok","Freigegeben"],
+    "entwurf":["warn","Entwurf"],
+  };
+  const [cls,label]=map[status]||["neutral",status];
+  return `<span class="chip ${cls}">${label}</span>`;
+}
+function archiveOptions(status){
+  if(status==="erstellt") return `<button class="btn small ghost" disabled>läuft…</button>`;
+  if(status==="export_laeuft") return `<button class="btn small ghost" disabled>Export läuft…</button>`;
+  if(status==="pruefung_prod") return `<button class="btn small primary" onclick="approveArchive(this)">Prüfen &amp; freigeben</button>`;
+  if(status==="abgeschlossen") return `<button class="btn small ghost" onclick="toast('Download gestartet (Demo)')">Herunterladen</button>`;
+  if(status==="fehler") return `<button class="btn small danger-ghost" onclick="toast('Erneuter Export gestartet (Demo)')">Erneut versuchen</button>`;
+  return "";
+}
+
+/* ============================= TABS ============================= */
+const TABS = [
+  {id:"archiv", label:"Archiv erstellen"},
+  {id:"routen", label:"Routen"},
+  {id:"stationen", label:"Stationen"},
+  {id:"zielcodes", label:"Zielcodes"},
+  {id:"zieltexte", label:"Zieltexte"},
+  {id:"linientexte", label:"Linientexte"},
+  {id:"ansagen", label:"Ansagen"},
+  {id:"dispo", label:"Zielcodes Dispo"},
+  {id:"parameter", label:"Parameter"},
+];
+
+const nav=document.getElementById('tabNav');
+TABS.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.textContent=t.label;
+  b.dataset.tab=t.id;
+  if(i===0) b.classList.add('active');
+  b.onclick=()=>selectTab(t.id);
+  nav.appendChild(b);
+});
+
+function selectTab(id){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('.tabview').forEach(v=>v.classList.toggle('active', v.id==='view-'+id));
+}
+
+const container=document.getElementById('tabContainer');
+TABS.forEach(t=>{
+  const div=document.createElement('div');
+  div.className='tabview'+(t.id==='archiv'?' active':'');
+  div.id='view-'+t.id;
+  container.appendChild(div);
+});
+
+/* ============================= TAB 1: ARCHIV ERSTELLEN ============================= */
+let selectedTyp="IBIS";
+function renderArchiv(){
+  const el=document.getElementById('view-archiv');
+  el.innerHTML=`
+    <div class="panel">
+      <h2>Neues Archiv erstellen</h2>
+      <p class="sub">AVG wählt den Archivtyp. AUDIO und PARAMETER benötigen keinen Zeitraum und werden erst bearbeitet, wenn der IBIS-Export abgeschlossen ist.</p>
+
+      <div class="radio-group" id="typGroup">
+        ${["IBIS","AUDIO","PARAMETER"].map(t=>`
+          <label class="radio-option ${t===selectedTyp?'selected':''}" onclick="setTyp('${t}')">
+            <input type="radio" name="typ" ${t===selectedTyp?'checked':''}>
+            <div>
+              <div class="lbl">${t}</div>
+              <div class="desc">${t==='IBIS'?'Fahrplan-/Stammdatenexport für den aktuellen Zeitraum':
+                t==='AUDIO'?'Audioarchiv – erst nach abgeschlossenem IBIS-Export':
+                'Parameterarchiv – erst nach abgeschlossenem IBIS-Export'}</div>
+            </div>
+          </label>`).join('')}
+      </div>
+
+      <div class="field-grid">
+        <div class="field-row">
+          <label>Zeitraum von</label>
+          <input type="date" id="dateFrom" ${selectedTyp!=='IBIS'?'disabled':''} value="2026-07-01">
+        </div>
+        <div class="field-row">
+          <label>Zeitraum bis</label>
+          <input type="date" id="dateTo" ${selectedTyp!=='IBIS'?'disabled':''} value="2026-07-31">
+        </div>
+      </div>
+      <button class="btn primary" onclick="startArchive()">Start</button>
+    </div>
+
+    <div class="panel">
+      <h2>Erstellte Archive</h2>
+      <p class="sub">Status wird vom Endpoint geliefert. Verfügbare Optionen hängen vom aktuellen Status ab.</p>
+      <table class="data">
+        <thead><tr><th>Datum</th><th>Typ</th><th>Status</th><th>Parameter</th><th class="col-actions">Optionen</th></tr></thead>
+        <tbody>
+          ${archiveRows.map((r,i)=>`
+            <tr>
+              <td>${r.datum}</td>
+              <td>${r.typ}</td>
+              <td>${statusChip(r.status)}</td>
+              <td>${r.parameter}</td>
+              <td class="col-actions">${archiveOptions(r.status)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function setTyp(t){ selectedTyp=t; renderArchiv(); }
+function startArchive(){
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
+  const param = selectedTyp==='IBIS' ? `Zeitraum ${from}–${to}` : (selectedTyp==='AUDIO' ? 'wartet auf IBIS-Export' : 'wartet auf IBIS-Export');
+  const now=new Date();
+  archiveRows.unshift({
+    datum: now.toLocaleDateString('de-DE')+" "+now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),
+    typ:selectedTyp, status:"erstellt", parameter: param
+  });
+  renderArchiv();
+  toast('Task erstellt – Verarbeitung gestartet (Demo)');
+  const idx=0;
+  setTimeout(()=>{ archiveRows[idx].status = archiveRows[idx].typ==='IBIS' ? 'export_laeuft':'export_laeuft'; renderArchiv(); }, 1400);
+  setTimeout(()=>{ archiveRows[idx].status = 'pruefung_prod'; renderArchiv(); toast('Bereit zur Prüfung'); }, 2800);
+}
+function approveArchive(btn){
+  const row=btn.closest('tr');
+  const idx=[...row.parentNode.children].indexOf(row);
+  archiveRows[idx].status='abgeschlossen';
+  renderArchiv();
+  toast('Archiv freigegeben und abgeschlossen');
+}
+renderArchiv();
+
+/* ============================= TAB 2: ROUTEN ============================= */
+let selectedRoute=null;
+let routeSort={key:'idRoute',dir:1};
+function renderRouten(){
+  const el=document.getElementById('view-routen');
+  el.innerHTML=`
+    <div class="layout-split-routen">
+    <div class="panel">
+      <h2>Routen</h2>
+      <p class="sub">Nicht editierbar. Jede Spalte ist einzeln sortierbar. Auswahl öffnet die Routenkonfiguration daneben.</p>
+      <div class="toolbar">
+        <div class="search">🔎 <input placeholder="Suche…" id="routeSearch" oninput="renderRouten()"></div>
+      </div>
+      <div style="overflow-x:auto;">
+      <table class="data" style="min-width:820px;">
+        <thead><tr>
+          ${ROUTE_COLS.map(c=>`<th class="sortable" onclick="sortRoutesBy('${c.key}')" style="white-space:nowrap;">${c.label}${sortArrow(routeSort,c.key)}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${filteredRoutes().map(r=>`
+            <tr class="${selectedRoute===r.idRoute?'selected':''}" onclick="selectRoute('${r.idRoute}')" style="cursor:pointer;">
+              <td style="white-space:nowrap;"><b>${r.idRoute}</b></td>
+              <td style="white-space:nowrap;">${r.stammSchwaechung||'—'}</td>
+              <td style="white-space:nowrap;">${r.stammFluegelzug||'—'}</td>
+              <td style="white-space:nowrap;">${r.position||'—'}</td>
+              <td style="white-space:nowrap;">${r.bezeichnung}</td>
+              <td><input type="checkbox" disabled ${r.neu?'checked':''}></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      </div>
+    </div>
+    <div class="panel" id="routeDetailPanel"></div>
+    </div>
+  `;
+  renderRouteDetail();
+}
+function filteredRoutes(){
+  const q=(document.getElementById('routeSearch')?.value||'').toLowerCase();
+  let rows=routesList.filter(r=>
+    r.idRoute.includes(q) || r.stammSchwaechung.includes(q) || r.stammFluegelzug.includes(q) ||
+    String(r.position).includes(q) || r.bezeichnung.toLowerCase().includes(q));
+  return sortRows(rows, routeSort.key, routeSort.dir);
+}
+function sortRoutesBy(key){
+  routeSort = routeSort.key===key ? {key, dir:routeSort.dir*-1} : {key, dir:1};
+  renderRouten();
+}
+function selectRoute(idRoute){ selectedRoute=idRoute; renderRouten(); }
+function renderRouteDetail(){
+  const panel=document.getElementById('routeDetailPanel');
+  if(!selectedRoute){
+    panel.innerHTML=`<div class="empty-state"><div class="big">🛤️</div>Route oben auswählen, um die Konfiguration zu öffnen.</div>`;
+    return;
+  }
+  const meta=routesList.find(r=>r.idRoute===selectedRoute);
+  const stops=routeStops[selectedRoute]||[];
+  panel.innerHTML=`
+    <h2>Routenkonfiguration</h2>
+    <p class="sub">${selectedRoute} — ${meta?.bezeichnung||''}</p>
+    <div class="route-header-card">
+      <div class="field-row">
+        <label>Routenkopf – Zielcode</label>
+        <div class="autocomplete">
+          <input type="text" placeholder="Zielcode oder Zieltext eingeben…" id="headerZielSearch" oninput="showZielResults('headerZielResults', this.value)" onfocus="showZielResults('headerZielResults', this.value)">
+          <div class="results" id="headerZielResults"></div>
+        </div>
+        <div class="hint">Endpoint liefert Zielcode, Linientext und Zieltext je Code.</div>
+      </div>
+    </div>
+    <table class="data">
+      <thead><tr><th>Station</th><th>Haltart</th><th>Ansage</th><th>Zielcode Zielüberschilderung</th></tr></thead>
+      <tbody>
+        ${stops.map((s,i)=>`
+          <tr>
+            <td>${s.station}</td><td>${s.haltart}</td>
+            <td>
+              <div class="autocomplete">
+                <input type="text" style="width:140px" placeholder="Ansage wählen…" id="ansage_${i}" value="${s.ansage}" oninput="showAnsageResults(${i}, this.value)" onfocus="showAnsageResults(${i}, this.value)">
+                <div class="results" id="ansageResults_${i}"></div>
+              </div>
+            </td>
+            <td>
+              <div class="autocomplete">
+                <input type="text" style="width:160px" placeholder="Zielcode wählen…" id="stopziel_${i}" value="${s.ziel}" oninput="showZielResults('stopZielResults_${i}', this.value)" onfocus="showZielResults('stopZielResults_${i}', this.value)">
+                <div class="results" id="stopZielResults_${i}"></div>
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:16px;text-align:right;">
+      <button class="btn primary" onclick="toast('Route gespeichert und freigegeben')">Route speichern und freigeben</button>
+    </div>
+  `;
+}
+function showAnsageResults(i, q){
+  const box=document.getElementById('ansageResults_'+i);
+  const matches=ansageOptions.filter(a=>a.num.includes(q)||a.text.toLowerCase().includes(q.toLowerCase()));
+  box.innerHTML=matches.map(a=>`<div onclick="pickAnsage(${i},'${a.num}','${a.text.replace(/'/g,"\\'")}')"><b>${a.num}</b> — ${a.text}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function pickAnsage(i,num,text){
+  document.getElementById('ansage_'+i).value = num+" – "+text;
+  document.getElementById('ansageResults_'+i).classList.remove('show');
+}
+function showZielResults(targetId, q){
+  const box=document.getElementById(targetId);
+  const matches=zielcodeOptions.filter(z=>z.code.includes(q)||z.line.toLowerCase().includes((q||'').toLowerCase())||z.dest.toLowerCase().includes((q||'').toLowerCase()));
+  box.innerHTML=matches.map(z=>`<div onclick="pickZiel('${targetId}','${z.code}','${z.line}','${z.dest.replace(/'/g,"\\'")}')"><b>${z.code}</b> — ${z.line} · ${z.dest}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function pickZiel(targetId, code, line, dest){
+  const inputId = targetId==='headerZielResults' ? 'headerZielSearch' : targetId.replace('stopZielResults_','stopziel_');
+  document.getElementById(inputId).value = code+" – "+line+" "+dest;
+  document.getElementById(targetId).classList.remove('show');
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.autocomplete')) document.querySelectorAll('.autocomplete .results').forEach(r=>r.classList.remove('show'));
+});
+renderRouten();
+
+/* ============================= TAB 3: STATIONEN ============================= */
+function renderStationen(){
+  const el=document.getElementById('view-stationen');
+  const q=(document.getElementById('stationSearch')?.value||'').toLowerCase();
+  const rows=stationenRows.filter(r=> r.id.toLowerCase().includes(q)||r.name.toLowerCase().includes(q));
+  el.innerHTML=`
+    <div class="panel">
+      <h2>Stationen</h2>
+      <p class="sub">Liste wird durch den IBIS-Export synchron zur bhf-Tabelle gehalten. Kein manuelles Hinzufügen oder Löschen möglich.</p>
+      <div class="toolbar"><div class="search">🔎 <input id="stationSearch" placeholder="Suche Station-ID oder Name…" oninput="renderStationen()"></div></div>
+      <table class="data">
+        <thead><tr>
+          <th>Station-ID</th><th>Station</th><th>Ansagennr.</th><th>Ansage</th>
+          <th>Text roter Innenanzeiger</th><th>Text Fahrerdisplay</th><th>Text Multifunktionsanz.</th>
+          <th>Tarifzone</th><th>GPS ignorieren</th><th>GPS-Radius</th><th>Online Info</th><th class="col-actions"></th>
+        </tr></thead>
+        <tbody>
+        ${rows.map((r,i)=>`
+          <tr>
+            <td>${r.id}</td><td>${r.name}</td><td>${r.ansageNum}</td><td>${r.ansage}</td>
+            <td>${r.innen}</td><td>${r.fahrer}</td><td>${r.multi}</td><td>${r.tarif}</td>
+            <td>${r.gps?'✔':'–'}</td><td>${r.radius}</td><td>${r.online?'✔':'–'}</td>
+            <td class="col-actions"><button class="btn small ghost" onclick="editStation(${stationenRows.indexOf(r)})">Bearbeiten</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function editStation(i){
+  const s=stationenRows[i];
+  openModal(`
+    <h3>Station bearbeiten</h3>
+    <p class="sub">${s.id} — ${s.name}</p>
+    <div class="field-row">
+      <label>Ansagennummer</label>
+      <div class="autocomplete">
+        <input type="text" id="m_ansage" value="${s.ansageNum} – ${s.ansage}" oninput="showAnsageResults('modal', this.value)" onfocus="showAnsageResults('modal', this.value)">
+        <div class="results" id="ansageResults_modal"></div>
+      </div>
+    </div>
+    <div class="field-row"><label>Text einzeiliger, roter Innenanzeiger</label><input type="text" id="m_innen" value="${s.innen}"></div>
+    <div class="field-row"><label>Text Fahrerdisplay</label><input type="text" id="m_fahrer" value="${s.fahrer}"></div>
+    <div class="field-row"><label>Text Multifunktionsanzeiger</label><input type="text" id="m_multi" value="${s.multi}"></div>
+    <div class="field-row">
+      <label>Tarifzone</label>
+      <select id="m_tarif">
+        ${["100","210","220","310","410"].map(t=>`<option ${t===s.tarif?'selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-row checkbox"><input type="checkbox" id="m_gps" ${s.gps?'checked':''}><label>GPS ignorieren</label></div>
+    <div class="field-row"><label>GPS-Radius Rangiermodus</label><input type="number" min="0" max="9999" id="m_radius" value="${s.radius}"></div>
+    <div class="field-row checkbox"><input type="checkbox" id="m_online" ${s.online?'checked':''}><label>Online Info</label></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="saveStation(${i})">Speichern</button>
+    </div>
+  `);
+}
+function saveStation(i){
+  const s=stationenRows[i];
+  s.innen=document.getElementById('m_innen').value;
+  s.fahrer=document.getElementById('m_fahrer').value;
+  s.multi=document.getElementById('m_multi').value;
+  s.tarif=document.getElementById('m_tarif').value;
+  s.gps=document.getElementById('m_gps').checked;
+  s.radius=parseInt(document.getElementById('m_radius').value||0);
+  s.online=document.getElementById('m_online').checked;
+  closeModal(); renderStationen(); toast('Station gespeichert');
+}
+renderStationen();
+
+/* ============================= TAB 4: ZIELCODES ============================= */
+let zcPage=1, zcPageSize=10;
+function renderZielcodes(){
+  const el=document.getElementById('view-zielcodes');
+  const q=(document.getElementById('zcSearch')?.value||'').toLowerCase();
+  const rows=zielcodeRows.filter(r=>r.code.includes(q)||r.zielText.toLowerCase().includes(q)||r.linieText.toLowerCase().includes(q));
+  el.innerHTML=`
+    <div class="panel">
+      <h2>Zielcodes</h2>
+      <p class="sub">Ca. ${ZIELCODE_TOTAL.toLocaleString('de-DE')} Zielcodes insgesamt (Demo zeigt Ausschnitt).</p>
+      <div class="toolbar">
+        <div class="search">🔎 <input id="zcSearch" placeholder="Suche Zielcode, Linie, Ziel…" oninput="renderZielcodes()"></div>
+        <div class="spacer"></div>
+        <button class="btn primary" onclick="editZielcode(null)">+ Neuen Zielcode erstellen</button>
+      </div>
+      <table class="data">
+        <thead><tr>
+          <th>Zielcode</th><th>Linie Nr.</th><th>Linie Text</th><th>Ziel Nr.</th><th>Ziel Text</th>
+          <th>Text Multifunktionsanz.</th><th>Text Innenanzeiger</th><th>Text Führerstand</th><th class="col-actions"></th>
+        </tr></thead>
+        <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td>${r.code}</td><td>${r.linieNum}</td><td>${r.linieText}</td><td>${r.zielNum}</td><td>${r.zielText}</td>
+            <td>${r.multi}</td><td>${r.innen}</td><td>${r.fahrer}</td>
+            <td class="col-actions">
+              <button class="btn small ghost" onclick="editZielcode('${r.code}')">Bearbeiten</button>
+              <button class="btn small danger-ghost" onclick="deleteZielcode('${r.code}')">Löschen</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="pagination">
+        Zeile 1–${rows.length} von ${ZIELCODE_TOTAL.toLocaleString('de-DE')}
+        <select><option>10 / Seite</option><option>25 / Seite</option><option>50 / Seite</option></select>
+        <button disabled>‹</button><button>›</button>
+      </div>
+    </div>
+  `;
+}
+function editZielcode(code){
+  const r = code ? zielcodeRows.find(z=>z.code===code) : {code:"",linieNum:"",linieText:"",zielNum:"",zielText:"",multi:"",innen:"",fahrer:""};
+  openModal(`
+    <h3>${code?'Zielcode bearbeiten':'Neuen Zielcode erstellen'}</h3>
+    <div class="field-row"><label>Zielcode (max. 5 Ziffern)</label><input type="number" id="z_code" maxlength="5" value="${r.code}" ${code?'':''}></div>
+    <div class="field-row">
+      <label>Linie Displaynummer</label>
+      <div class="autocomplete">
+        <input type="text" id="z_linie" value="${r.linieNum?r.linieNum+' – '+r.linieText:''}" oninput="showLineResults(this.value)" onfocus="showLineResults(this.value)">
+        <div class="results" id="lineResults"></div>
+      </div>
+    </div>
+    <div class="field-row">
+      <label>Ziel Displaynummer</label>
+      <div class="autocomplete">
+        <input type="text" id="z_ziel" value="${r.zielNum?r.zielNum+' – '+r.zielText:''}" oninput="showZielResults('zielDestResults', this.value)" onfocus="showZielResults('zielDestResults', this.value)">
+        <div class="results" id="zielDestResults"></div>
+      </div>
+    </div>
+    <div class="field-row"><label>Text Multifunktionsanzeiger</label><input type="text" id="z_multi" value="${r.multi}"></div>
+    <div class="field-row"><label>Text roter Innenanzeiger</label><input type="text" id="z_innen" value="${r.innen}"></div>
+    <div class="field-row"><label>Text Führerstands-Display</label><input type="text" id="z_fahrer" value="${r.fahrer}"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="saveZielcode('${code||""}')">Speichern</button>
+    </div>
+  `);
+}
+function showLineResults(q){
+  const box=document.getElementById('lineResults');
+  const matches=zielcodeOptions.filter(z=>z.line.toLowerCase().includes((q||'').toLowerCase()));
+  box.innerHTML=matches.map(z=>`<div onclick="pickLine('${z.code}','${z.line}')"><b>${z.code}</b> — ${z.line}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function pickLine(num,text){ document.getElementById('z_linie').value=num+" – "+text; document.getElementById('lineResults').classList.remove('show'); }
+function saveZielcode(code){
+  const codeVal=document.getElementById('z_code').value;
+  const data={
+    code: codeVal.padStart(5,'0'),
+    linieNum: document.getElementById('z_linie').value.split(' – ')[0]||'',
+    linieText: document.getElementById('z_linie').value.split(' – ')[1]||'',
+    zielNum: document.getElementById('z_ziel').value.split(' – ')[0]||'',
+    zielText: document.getElementById('z_ziel').value.split(' – ')[1]||'',
+    multi: document.getElementById('z_multi').value,
+    innen: document.getElementById('z_innen').value,
+    fahrer: document.getElementById('z_fahrer').value,
+  };
+  if(code){
+    const idx=zielcodeRows.findIndex(z=>z.code===code);
+    zielcodeRows[idx]=data;
+  } else {
+    zielcodeRows.unshift(data);
+  }
+  closeModal(); renderZielcodes(); toast('Zielcode gespeichert');
+}
+function deleteZielcode(code){
+  zielcodeRows=zielcodeRows.filter(z=>z.code!==code);
+  renderZielcodes(); toast('Zielcode gelöscht');
+}
+renderZielcodes();
+
+/* ============================= TAB 5+6: ZIELTEXTE / LINIENTEXTE ============================= */
+function renderLongTable(viewId, rowsRef, total, tableLabel, sortStateKey){
+  const el=document.getElementById(viewId);
+  const q=(document.getElementById(viewId+'_search')?.value||'').toLowerCase();
+  let rows=rowsRef.filter(r=>r.nummer.includes(q)||(r.text||'').toLowerCase().includes(q));
+  rows=rows.slice(0,12);
+  el.innerHTML=`
+    <div class="panel">
+      <h2>${tableLabel}</h2>
+      <p class="sub">Feste Tabellengröße von ${total.toLocaleString('de-DE')} Zeilen. Kein manuelles Hinzufügen oder Löschen — nur der Text kann bearbeitet werden.</p>
+      <div class="toolbar"><div class="search">🔎 <input id="${viewId}_search" placeholder="Suche Nummer oder Text…" oninput="searchLongTable('${viewId}')"></div></div>
+      <table class="data">
+        <thead><tr><th class="sortable">Nummer</th><th class="sortable">Text</th><th class="col-actions"></th></tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr><td>${r.nummer}</td><td>${r.text || '<span style="color:#b0b8c1">— leer —</span>'}</td>
+            <td class="col-actions"><button class="btn small ghost" onclick="editLongRow('${viewId}','${r.nummer}')">Bearbeiten</button></td></tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="pagination">Zeile 1–${rows.length} von ${total.toLocaleString('de-DE')}
+        <select><option>25 / Seite</option><option>50 / Seite</option><option>100 / Seite</option></select>
+        <button disabled>‹</button><button>›</button>
+      </div>
+    </div>
+  `;
+}
+function editLongRow(viewId, nummer){
+  const map = viewId==='view-zieltexte' ? zieltexteRows : linientexteRows;
+  const r=map.find(x=>x.nummer===nummer);
+  openModal(`
+    <h3>Eintrag bearbeiten</h3>
+    <div class="field-row"><label>Nummer</label><input type="text" value="${r.nummer}" disabled></div>
+    <div class="field-row"><label>Text</label><input type="text" id="lr_text" value="${r.text}"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="saveLongRow('${viewId}','${nummer}')">Speichern</button>
+    </div>
+  `);
+}
+function saveLongRow(viewId, nummer){
+  const map = viewId==='view-zieltexte' ? zieltexteRows : linientexteRows;
+  const r=map.find(x=>x.nummer===nummer);
+  r.text=document.getElementById('lr_text').value;
+  closeModal();
+  if(viewId==='view-zieltexte') renderZieltexte(); else renderLinientexte();
+  toast('Text gespeichert');
+}
+function renderZieltexte(){ renderLongTable('view-zieltexte', zieltexteRows, 9999, 'Zieltexte'); }
+function renderLinientexte(){ renderLongTable('view-linientexte', linientexteRows, 3700, 'Linientexte'); }
+function searchLongTable(viewId){
+  if(viewId==='view-zieltexte') renderZieltexte(); else renderLinientexte();
+}
+renderZieltexte();
+renderLinientexte();
+
+/* ============================= TAB 7: ANSAGEN ============================= */
+function renderAnsagen(){
+  const el=document.getElementById('view-ansagen');
+  el.innerHTML=`
+    <div class="panel">
+      <div class="note-banner">Konzept noch nicht final abgestimmt: Ansagenkonfiguration &amp; Audioarchiv-Erstellung sind vom IBIS-Export getrennt. IBIS hat Priorität, dieser Bereich zeigt einen ersten Entwurf.</div>
+      <h2>Audiofragmente</h2>
+      <p class="sub">AVG lädt Audiodateien hoch — neue Dateinamen oder Ersetzung bestehender Dateien.</p>
+      <div class="toolbar">
+        <button class="btn primary" onclick="toast('Datei-Upload geöffnet (Demo)')">⬆ Audiodatei hochladen</button>
+      </div>
+      <table class="data">
+        <thead><tr><th>Dateiname</th><th>Größe</th><th>Hochgeladen</th><th class="col-actions"></th></tr></thead>
+        <tbody>
+          <tr><td>9999.mp3</td><td>142 KB</td><td>29.06.2026</td><td class="col-actions"><button class="btn small ghost" onclick="toast('Wiedergabe (Demo)')">▶ Abspielen</button></td></tr>
+          <tr><td>VordAnsage_1.mp3</td><td>88 KB</td><td>29.06.2026</td><td class="col-actions"><button class="btn small ghost" onclick="toast('Wiedergabe (Demo)')">▶ Abspielen</button></td></tr>
+          <tr><td>9941.mp3</td><td>63 KB</td><td>20.06.2026</td><td class="col-actions"><button class="btn small ghost" onclick="toast('Wiedergabe (Demo)')">▶ Abspielen</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <h2>Playlist – Ansagen &amp; Funktionsansagen</h2>
+      <p class="sub">Reihenfolge der Audiofragmente je Ansagenummer. Nummern ab 110.001 sind Funktionsansagen mit fixer Nummer.</p>
+      <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="addPlaylistRow()">+ Fragment hinzufügen</button></div>
+      <table class="data">
+        <thead><tr><th>Nummer</th><th>Fragment</th><th>Dateiname</th><th class="col-actions"></th></tr></thead>
+        <tbody>
+          ${playlistRows.map((p,i)=>`
+            <tr><td>${p.nummer}</td><td>${p.fragment}</td><td>${p.filename}</td>
+              <td class="col-actions">
+                <button class="btn small ghost" onclick="toast('Fragment bearbeitet (Demo)')">Bearbeiten</button>
+                <button class="btn small danger-ghost" onclick="deletePlaylistRow(${i})">Löschen</button>
+              </td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function addPlaylistRow(){
+  playlistRows.push({nummer:"9.999", fragment: playlistRows.length+1, filename:"neue_datei.mp3"});
+  renderAnsagen(); toast('Fragment hinzugefügt (Demo)');
+}
+function deletePlaylistRow(i){ playlistRows.splice(i,1); renderAnsagen(); toast('Fragment gelöscht'); }
+renderAnsagen();
+
+/* ============================= TAB 8: ZIELCODES DISPO ============================= */
+function renderDispo(){
+  const el=document.getElementById('view-dispo');
+  const q=(document.getElementById('dispoSearch')?.value||'').toLowerCase();
+  const rows=dispoRows.filter((r,i)=> r.linie.toLowerCase().includes(q)||r.ziel.toLowerCase().includes(q)||r.code.includes(q));
+  el.innerHTML=`
+    <div class="panel">
+      <h2>Zielcodes für Dispositionsmaßnahmen</h2>
+      <p class="sub">Wird von vehicle_interface genutzt, wenn sich der ursprüngliche Zielcode durch eine dispositive Änderung ändert. Ca. 30.000 Zeilen, alle Spalten editierbar.</p>
+      <div class="toolbar">
+        <div class="search">🔎 <input id="dispoSearch" placeholder="Suche Linie, Ziel, Code…" oninput="renderDispo()"></div>
+        <div class="spacer"></div>
+        <button class="btn primary" onclick="editDispo(null)">+ Neuer Eintrag</button>
+      </div>
+      <table class="data">
+        <thead><tr><th>Gattung</th><th>Linie</th><th>Zielstation</th><th>Zielcode</th><th class="col-actions"></th></tr></thead>
+        <tbody>
+        ${rows.map((r)=>`
+          <tr>
+            <td>${r.gattung}</td><td>${r.linie}</td><td>${r.ziel}</td><td>${r.code}</td>
+            <td class="col-actions">
+              <button class="btn small ghost" onclick="editDispo(${dispoRows.indexOf(r)})">Bearbeiten</button>
+              <button class="btn small danger-ghost" onclick="deleteDispo(${dispoRows.indexOf(r)})">Löschen</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="pagination">Zeile 1–${rows.length} von ca. 30.000
+        <select><option>25 / Seite</option><option>50 / Seite</option></select>
+        <button disabled>‹</button><button>›</button>
+      </div>
+    </div>
+  `;
+}
+function editDispo(i){
+  const r = i===null ? {gattung:"S",linie:"",ziel:"",code:""} : dispoRows[i];
+  openModal(`
+    <h3>${i===null?'Neuer Eintrag':'Eintrag bearbeiten'}</h3>
+    <div class="field-row">
+      <label>Gattung</label>
+      <select id="d_gattung"><option ${r.gattung==='S'?'selected':''}>S</option><option ${r.gattung==='E'?'selected':''}>E</option></select>
+    </div>
+    <div class="field-row"><label>Linie</label><input type="text" id="d_linie" value="${r.linie}"></div>
+    <div class="field-row"><label>Zielstation</label><input type="text" id="d_ziel" value="${r.ziel}"></div>
+    <div class="field-row">
+      <label>Zielcode</label>
+      <div class="autocomplete">
+        <input type="text" id="d_code" value="${r.code}" oninput="showZielResults('dispoZielResults', this.value)" onfocus="showZielResults('dispoZielResults', this.value)">
+        <div class="results" id="dispoZielResults"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="saveDispo(${i===null?'null':i})">Speichern</button>
+    </div>
+  `);
+}
+function saveDispo(i){
+  const data={
+    gattung:document.getElementById('d_gattung').value,
+    linie:document.getElementById('d_linie').value,
+    ziel:document.getElementById('d_ziel').value,
+    code:document.getElementById('d_code').value.split(' – ')[0],
+  };
+  if(i===null || i==='null') dispoRows.unshift(data); else dispoRows[i]=data;
+  closeModal(); renderDispo(); toast('Eintrag gespeichert');
+}
+function deleteDispo(i){ dispoRows.splice(i,1); renderDispo(); toast('Eintrag gelöscht'); }
+renderDispo();
+
+/* ============================= TAB 9: PARAMETER ============================= */
+function renderParameter(){
+  const el=document.getElementById('view-parameter');
+  const q=(document.getElementById('paramSearch')?.value||'').toLowerCase();
+  const rows=parameterRows.filter(r=>r.name.toLowerCase().includes(q));
+  el.innerHTML=`
+    <div class="panel">
+      <h2>Parameterarchiv</h2>
+      <p class="sub">Konfiguration der INIT-Fahrzeugsoftware-Parameter. Jedes neue Software-Release kann neue Parameter oder Werte mitbringen; nicht alle sind durch AVG editierbar.</p>
+      <div class="toolbar"><div class="search">🔎 <input id="paramSearch" placeholder="Parameter suchen…" oninput="renderParameter()"></div></div>
+      <table class="data">
+        <thead><tr><th>Parameter</th><th>Wert</th><th>Editierbar</th><th>Release</th><th class="col-actions"></th></tr></thead>
+        <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td><code>${r.name}</code></td>
+            <td>${r.editable ? `<input type="text" value="${r.wert}" style="width:90px" onchange="updateParam('${r.name}', this.value)">` : r.wert}</td>
+            <td>${r.editable?'<span class="chip ok">Ja</span>':'<span class="chip neutral">Nein</span>'}</td>
+            <td>${r.release}</td>
+            <td class="col-actions">${r.editable?`<button class="btn small ghost" onclick="toast('Parameter gespeichert')">Speichern</button>`:''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+function updateParam(name, val){
+  const p=parameterRows.find(r=>r.name===name);
+  p.wert=val;
+}
+renderParameter();
+</script>
+</body>
+</html>
