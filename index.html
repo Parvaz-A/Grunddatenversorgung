@@ -65,6 +65,30 @@
   nav.tabs button:hover{color:var(--primary);background:var(--primary-light);}
   nav.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
 
+  .breadcrumb{
+    padding:9px 26px;font-size:12px;color:var(--text-muted);background:#fbfcfd;
+    border-bottom:1px solid var(--border);
+  }
+  .breadcrumb .sep{margin:0 6px;color:#c3cad2;}
+  .breadcrumb .current{color:var(--text);font-weight:500;}
+
+  .dl-wrap{position:relative;display:inline-block;}
+  .dl-menu{
+    display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;
+    border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 20px rgba(0,0,0,.14);
+    min-width:230px;z-index:40;overflow:hidden;
+  }
+  .dl-menu.show{display:block;}
+  .dl-menu div{padding:10px 14px;font-size:12.5px;cursor:pointer;white-space:nowrap;}
+  .dl-menu div:hover{background:var(--primary-light);color:var(--primary);}
+
+  .mini-stepper{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;}
+  .mini-stepper .step{padding:3px 8px;border-radius:10px;background:#eceff1;color:var(--text-muted);}
+  .mini-stepper .step.ok{background:var(--ok-bg);color:var(--ok);}
+  .mini-stepper .step.err{background:var(--err-bg);color:var(--err);font-weight:600;}
+  .mini-stepper .step.pending{background:#eceff1;color:#9aa4b0;}
+  .mini-stepper .arrow{color:#c3cad2;}
+
   main{padding:22px 32px 60px;max-width:none;margin:0;}
   .panel{
     background:var(--panel);
@@ -176,6 +200,36 @@
 
   .badge-tab-count{background:#eceff1;color:var(--text-muted);border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:6px;}
   .note-banner{background:var(--warn-bg);border:1px solid #ffe0b2;color:var(--warn);border-radius:6px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;}
+
+  .errorlog-header{
+    display:grid;grid-template-columns:22px 1.6fr 1.1fr 0.8fr 0.9fr 1fr;
+    align-items:center;gap:10px;padding:9px 16px;
+    background:#f7f8fa;color:var(--text-muted);font-weight:500;font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);
+  }
+  .errorlog-list{display:flex;flex-direction:column;}
+  .errorlog-item{border-bottom:1px solid var(--border);background:#fff;}
+  .errorlog-item:last-child{border-bottom:none;}
+  .errorlog-item.handled{opacity:.7;}
+  .errorlog-row{
+    display:grid;grid-template-columns:22px 1.6fr 1.1fr 0.8fr 0.9fr 1fr;
+    align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font-size:13px;
+  }
+  .errorlog-row:hover{background:#fafbfc;}
+  .errorlog-item.open .errorlog-row{background:var(--primary-light);}
+  .errorlog-caret{color:#8a94a3;font-size:11px;}
+  .errorlog-type{font-weight:500;}
+  .errorlog-meta{color:var(--text-muted);font-size:12.5px;}
+  .errorlog-link{color:var(--primary);font-size:11px;font-weight:700;letter-spacing:.4px;text-align:right;}
+  .errorlog-detail{
+    padding:16px 20px 20px 48px;background:#fafbfc;border-top:1px solid var(--border);
+  }
+  .errorlog-detail-text{font-size:13px;color:var(--text);margin-bottom:14px;line-height:1.5;}
+  .errorlog-fix{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px 2px;max-width:420px;}
+  .errorlog-fix .field-row{margin-bottom:14px;}
+  .errorlog-fix .field-row label{font-size:11.5px;}
+  .errorlog-fix .field-row input{width:100%;}
+  .errorlog-fix .field-grid{max-width:none;}
   .toast{
     position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
     background:#26313f;color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;
@@ -194,6 +248,7 @@
   <span class="env">Klickdummy · Demo-Daten</span>
 </header>
 
+<div class="breadcrumb" id="breadcrumb"></div>
 <nav class="tabs" id="tabNav"></nav>
 
 <main id="tabContainer"></main>
@@ -227,9 +282,16 @@ const zielcodeOptions = [
 ];
 
 let archiveRows = [
-  {datum:"05.07.2026 08:12", typ:"IBIS", status:"abgeschlossen", parameter:"Zeitraum 01.06.–30.06.2026"},
-  {datum:"03.07.2026 14:40", typ:"AUDIO", status:"export_laeuft", parameter:"–"},
-  {datum:"01.07.2026 09:03", typ:"PARAMETER", status:"pruefung_prod", parameter:"Release INIT 4.12"},
+  {datum:"05.07.2026 08:12", typ:"IBIS", status:"abgeschlossen", parameter:"INIT 4.12 (aktuell) · Zeitraum 01.06.–30.06.2026"},
+  {datum:"03.07.2026 14:40", typ:"IBIS", status:"neue_routen", parameter:"INIT 4.12 (aktuell) · Zeitraum 01.07.–31.07.2026"},
+  {datum:"04.07.2026 10:20", typ:"IBIS", status:"fehler", parameter:"INIT 4.12 (aktuell) · Zeitraum 01.08.–31.08.2026",
+    errorLog:[
+      {type:"Missing Distances", detail:"Route 56.104: Distanz zwischen 'Rastatt' und 'Rastatt Süd' fehlt.", external:false, resolved:false, skipped:false, tab:"routen", tabLabel:"Routen"},
+      {type:"Missing LineNumber", detail:"Route 56.135: Liniennummer ist nicht gesetzt.", external:false, resolved:false, skipped:false, tab:"zielcodes", tabLabel:"Zielcodes"},
+      {type:"Missing Station Coordinates", detail:"Station 'Reutlingen West': GPS-Koordinaten fehlen.", external:false, resolved:false, skipped:false, tab:"stationen", tabLabel:"Stationen"},
+      {type:"Missing Schedule Data", detail:"Fahrplan-Release 2026-08: Abfahrtszeiten für Linie S4 unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
+      {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
+    ]},
 ];
 
 /* Routen-Sidebar: Spalten wie im Ticket-Screenshot (ID-Route, ID Stammroute bei Schwächung,
@@ -359,29 +421,279 @@ document.getElementById('modalBackdrop').addEventListener('click',e=>{
 });
 function statusChip(status){
   const map={
-    "erstellt":["neutral","Task erstellt"],
-    "export_laeuft":["info","IBIS-Export läuft"],
-    "pruefung_prod":["warn","Zur Prüfung Prod.-System"],
+    "routendetection_laeuft":["info","Routenerkennung läuft"],
+    "fertig":["ok","Fertig"],
+    "neue_routen":["warn","Neue Routen"],
+    "fehler":["err","Fehler"],
+    "bereit":["ok","Abgeschlossen"],
+    "archiv_wird_erstellt":["info","Archiv wird erstellt"],
+    "archiv_erstellt":["ok","Abgeschlossen"],
+    "upload_laeuft":["info","Upload läuft"],
     "abgeschlossen":["ok","Abgeschlossen"],
-    "fehler":["err","Fehlgeschlagen"],
-    "freigegeben":["ok","Freigegeben"],
-    "entwurf":["warn","Entwurf"],
   };
   const [cls,label]=map[status]||["neutral",status];
   return `<span class="chip ${cls}">${label}</span>`;
 }
-function archiveOptions(status){
-  if(status==="erstellt") return `<button class="btn small ghost" disabled>läuft…</button>`;
-  if(status==="export_laeuft") return `<button class="btn small ghost" disabled>Export läuft…</button>`;
-  if(status==="pruefung_prod") return `<button class="btn small primary" onclick="approveArchive(this)">Prüfen &amp; freigeben</button>`;
-  if(status==="abgeschlossen") return `<button class="btn small ghost" onclick="toast('Download gestartet (Demo)')">Herunterladen</button>`;
-  if(status==="fehler") return `<button class="btn small danger-ghost" onclick="toast('Erneuter Export gestartet (Demo)')">Erneut versuchen</button>`;
+function archiveOptions(status, i){
+  if(status==="routendetection_laeuft") return `<button class="btn small ghost" disabled>Routenerkennung läuft…</button>`;
+  if(status==="fertig" || status==="bereit"){
+    return `<button class="btn small primary" onclick="startArchiveCreation(${i})">Archiv erstellen</button>`;
+  }
+  if(status==="neue_routen"){
+    return `
+      <button class="btn small primary" onclick="goToRoutenConfig(${i})">Routen konfigurieren</button>
+      <button class="btn small ghost" style="margin-left:6px;" onclick="markRoutesConfigured(${i})">Konfiguriert</button>
+    `;
+  }
+  if(status==="fehler"){
+    return `<button class="btn small danger-ghost" onclick="renderErrorLogModal(${i})">Details ansehen</button>`;
+  }
+  if(status==="archiv_wird_erstellt") return `<button class="btn small ghost" disabled>Archiv wird erstellt…</button>`;
+  if(status==="archiv_erstellt") return `<button class="btn small ghost" disabled>Upload wird gestartet…</button>`;
+  if(status==="upload_laeuft") return `<button class="btn small ghost" disabled>Upload läuft…</button>`;
+  if(status==="abgeschlossen"){
+    return `
+      <div class="dl-wrap">
+        <button class="btn small ghost" onclick="toggleDownloadMenu(${i})">Herunterladen ▾</button>
+        <div class="dl-menu" id="dlMenu_${i}">
+          <div onclick="downloadArchive(${i},'gesamt')">Alle Routen</div>
+          <div onclick="downloadArchive(${i},'neue_routen')">Neue Routen</div>
+        </div>
+      </div>
+    `;
+  }
   return "";
+}
+function toggleDownloadMenu(i){
+  document.querySelectorAll('.dl-menu').forEach(m=>{ if(m.id!=='dlMenu_'+i) m.classList.remove('show'); });
+  document.getElementById('dlMenu_'+i).classList.toggle('show');
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.dl-wrap')) document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('show'));
+});
+function downloadArchive(i, type){
+  document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('show'));
+  toast(type==='gesamt' ? 'Download „Alle Routen" gestartet (Demo)' : 'Download „Neue Routen" gestartet (Demo)');
+}
+function statusCell(r){
+  const warn = r.hasSkippedError ? `<span class="chip warn" style="margin-left:6px;" title="Ein externer Fahrplanfehler wurde übersprungen und ist weiterhin offen">⚠ Fehler vorhanden</span>` : '';
+  return statusChip(r.status) + warn;
+}
+function renderErrorLogModal(i){
+  const r=archiveRows[i];
+  const allHandled = r.errorLog.every(e=>e.resolved||e.skipped);
+  openModal(`
+    <h3>Error-Log</h3>
+    <p class="sub">${r.datum} · ${r.typ} · ${r.parameter}</p>
+    <p class="sub" style="margin-bottom:14px;">Die Routenerkennung hat folgende Fehler gefunden:</p>
+    ${r.errorLog.map((e,j)=>`
+      <div style="border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:10px;${e.resolved?'opacity:.55;':e.skipped?'opacity:.8;':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div>
+            <div style="font-weight:500;font-size:13px;">
+              ${e.type}
+              ${e.external?' <span class="chip neutral" style="margin-left:4px;">Extern</span>':''}
+              ${e.tabLabel?` <span class="chip info" style="margin-left:4px;" title="Wird im Tab „${e.tabLabel}“ korrigiert">Tab: ${e.tabLabel}</span>`:''}
+            </div>
+            <div class="sub" style="margin:2px 0 0;">${e.detail}</div>
+          </div>
+          <div style="white-space:nowrap;">
+            ${e.resolved ? '<span class="chip ok">Behoben</span>' :
+              e.skipped ? '<span class="chip warn">Übersprungen</span>' :
+              e.external ? `<button class="btn small ghost" onclick="skipSingleError(${i},${j})">Überspringen</button>` :
+              `<button class="btn small primary" onclick="goToErrorTab(${i},${j})">Zu ${e.tabLabel} springen</button>`}
+          </div>
+        </div>
+      </div>
+    `).join('')}
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Schließen</button>
+      ${allHandled ? `<button class="btn primary" onclick="finishErrorHandling(${i})">Weiter</button>` : ''}
+    </div>
+  `);
+}
+function goToErrorTab(i,j){
+  const e=archiveRows[i].errorLog[j];
+  closeModal();
+  selectTab(e.tab);
+  e.resolved=true;
+  toast(`Zu „${e.tabLabel}“ gesprungen – ${e.type} als korrigiert markiert (Demo)`);
+}
+function skipSingleError(i,j){
+  const e=archiveRows[i].errorLog[j];
+  openModal(`
+    <h3>Sind Sie sicher?</h3>
+    <p class="sub">„${e.type}" wird als externer Fahrplanfehler übersprungen. Der Fehler bleibt auch nach Archiverstellung in der Tabelle sichtbar markiert.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="renderErrorLogModal(${i})">Abbrechen</button>
+      <button class="btn primary" onclick="confirmSkipSingleError(${i},${j})">Ja, überspringen</button>
+    </div>
+  `);
+}
+function confirmSkipSingleError(i,j){
+  archiveRows[i].errorLog[j].skipped=true;
+  renderErrorLogModal(i);
+  toast('Fehler übersprungen – bleibt markiert');
+}
+function finishErrorHandling(i){
+  const r=archiveRows[i];
+  r.hasSkippedError = r.errorLog.some(e=>e.skipped);
+  r.status='bereit';
+  closeModal();
+  renderArchiv();
+  toast(r.hasSkippedError ? 'Fehler bearbeitet – ein Fahrplanfehler bleibt markiert' : 'Alle Fehler behoben – Status: Abgeschlossen');
+}
+function goToRoutenConfig(i){
+  selectTab('routen');
+  toast('Zu Routen konfigurieren gesprungen (Demo) – betroffene Route markiert');
+}
+function markRoutesConfigured(i){
+  archiveRows[i].status='bereit';
+  renderArchiv();
+  toast('Routen konfiguriert – Status: Abgeschlossen');
+}
+
+/* ============================= TAB: ERROR LOGS ============================= */
+let errorLogExpanded = new Set();
+function renderErrorLogs(){
+  const el=document.getElementById('view-errorlogs');
+  const rows=[];
+  archiveRows.forEach((r,i)=>{ if(r.errorLog) r.errorLog.forEach((e,j)=>rows.push({i,j,e,r})); });
+  el.innerHTML=`
+    <div class="panel">
+      <h2>Error Logs</h2>
+      <p class="sub">Alle von der Routenerkennung gefundenen Fehler, archivübergreifend. Zeile öffnen und direkt korrigieren.</p>
+      ${rows.length===0 ? `<div class="empty-state">Aktuell keine Fehler vorhanden.</div>` : `
+      <div class="errorlog-header">
+        <span></span>
+        <span>Fehlertyp</span>
+        <span>Archiv</span>
+        <span>Ziel-Tab</span>
+        <span>Status</span>
+        <span></span>
+      </div>
+      <div class="errorlog-list">
+        ${rows.map(({i,j,e,r})=>{
+          const key=i+'-'+j;
+          const open=errorLogExpanded.has(key);
+          const handled = e.resolved||e.skipped;
+          const statusChipHtml = e.resolved?'<span class="chip ok">✓ Behoben</span>':e.skipped?'<span class="chip warn">Übersprungen</span>':'<span class="chip err">Offen</span>';
+          return `
+          <div class="errorlog-item ${open?'open':''} ${handled?'handled':''}">
+            <div class="errorlog-row" onclick="toggleErrorLogRow('${key}')">
+              <span class="errorlog-caret">${open?'▲':'▼'}</span>
+              <span class="errorlog-type">${e.type}${e.external?' <span class="chip neutral">Extern</span>':''}</span>
+              <span class="errorlog-meta">${r.datum} · ${r.typ}</span>
+              <span class="errorlog-meta">${e.tabLabel||'—'}</span>
+              <span class="errorlog-status">${statusChipHtml}</span>
+              <span class="errorlog-link">${handled?'':'FEHLER ANZEIGEN'}</span>
+            </div>
+            ${open?`
+            <div class="errorlog-detail">
+              <div class="errorlog-detail-text">${e.detail}</div>
+              ${e.resolved?`<div class="chip ok">Bereits behoben</div>`:
+                e.skipped?`<div class="chip warn">Bereits übersprungen – bleibt markiert</div>`:
+                e.external?`
+                  <p class="hint" style="margin:0 0 10px;">Diese Korrektur erfolgt in einem externen System und kann hier nicht direkt bearbeitet werden.</p>
+                  <button class="btn small ghost" onclick="skipErrorFromLogs(${i},${j})">Überspringen</button>
+                `:
+                `
+                <div class="errorlog-fix">${getInlineFixFields(e,i,j)}</div>
+                <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+                  <button class="btn small primary" onclick="saveInlineCorrection(${i},${j})">Korrigieren &amp; Speichern</button>
+                  <button class="btn small ghost" onclick="goToErrorTabFromLogs(${i},${j})">Stattdessen in ${e.tabLabel} bearbeiten</button>
+                </div>
+                `}
+            </div>`:''}
+          </div>
+          `;
+        }).join('')}
+      </div>
+      `}
+    </div>
+  `;
+}
+function getInlineFixFields(e,i,j){
+  const id=`fix_${i}_${j}`;
+  if(e.type==="Missing Distances"){
+    return `<div class="field-row"><label>Distanz zur nächsten Station (Meter)</label><input type="number" min="0" id="${id}" placeholder="z. B. 850"></div>`;
+  }
+  if(e.type==="Missing LineNumber"){
+    return `<div class="field-row"><label>Liniennummer</label><input type="text" id="${id}" placeholder="z. B. S71"></div>`;
+  }
+  if(e.type==="Missing Station Coordinates"){
+    return `<div class="field-grid">
+      <div class="field-row"><label>Breitengrad (Lat)</label><input type="text" id="${id}_lat" placeholder="z. B. 48.8586"></div>
+      <div class="field-row"><label>Längengrad (Lon)</label><input type="text" id="${id}_lon" placeholder="z. B. 8.3599"></div>
+    </div>`;
+  }
+  if(e.type==="Missing Announcement"){
+    return `
+      <div class="field-row">
+        <label>Ansage zuordnen</label>
+        <div class="autocomplete">
+          <input type="text" id="${id}" placeholder="Ansage suchen…" oninput="showFixAnsageResults(${i},${j},this.value)" onfocus="showFixAnsageResults(${i},${j},this.value)">
+          <div class="results" id="${id}_results"></div>
+        </div>
+      </div>`;
+  }
+  return `<div class="field-row"><label>Wert</label><input type="text" id="${id}" placeholder="Korrektur eingeben…"></div>`;
+}
+function showFixAnsageResults(i,j,q){
+  const box=document.getElementById(`fix_${i}_${j}_results`);
+  const matches=ansageOptions.filter(a=>a.num.includes(q)||a.text.toLowerCase().includes((q||'').toLowerCase()));
+  box.innerHTML=matches.map(a=>`<div onclick="pickFixAnsage(${i},${j},'${a.num}','${a.text.replace(/'/g,"\\'")}')"><b>${a.num}</b> — ${a.text}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function pickFixAnsage(i,j,num,text){
+  document.getElementById(`fix_${i}_${j}`).value = num+" – "+text;
+  document.getElementById(`fix_${i}_${j}_results`).classList.remove('show');
+}
+function saveInlineCorrection(i,j){
+  const e=archiveRows[i].errorLog[j];
+  const id=`fix_${i}_${j}`;
+  if(e.type==="Missing Station Coordinates"){
+    const lat=document.getElementById(id+'_lat').value, lon=document.getElementById(id+'_lon').value;
+    if(!lat||!lon){ toast('Bitte beide Koordinaten eingeben'); return; }
+  } else {
+    const val=document.getElementById(id)?.value;
+    if(!val){ toast('Bitte einen Wert eingeben'); return; }
+  }
+  e.resolved=true;
+  renderErrorLogs();
+  renderArchiv();
+  toast(e.type+' korrigiert und gespeichert');
+}
+function toggleErrorLogRow(key){
+  if(errorLogExpanded.has(key)) errorLogExpanded.delete(key); else errorLogExpanded.add(key);
+  renderErrorLogs();
+}
+function goToErrorTabFromLogs(i,j){
+  goToErrorTab(i,j);
+}
+function skipErrorFromLogs(i,j){
+  const e=archiveRows[i].errorLog[j];
+  openModal(`
+    <h3>Sind Sie sicher?</h3>
+    <p class="sub">„${e.type}" wird als externer Fahrplanfehler übersprungen. Der Fehler bleibt in der Liste sichtbar markiert.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="confirmSkipErrorFromLogs(${i},${j})">Ja, überspringen</button>
+    </div>
+  `);
+}
+function confirmSkipErrorFromLogs(i,j){
+  archiveRows[i].errorLog[j].skipped=true;
+  closeModal();
+  renderErrorLogs();
+  renderArchiv();
+  toast('Fehler übersprungen – bleibt markiert');
 }
 
 /* ============================= TABS ============================= */
 const TABS = [
   {id:"archiv", label:"Archiv erstellen"},
+  {id:"errorlogs", label:"Error Logs"},
   {id:"routen", label:"Routen"},
   {id:"stationen", label:"Stationen"},
   {id:"zielcodes", label:"Zielcodes"},
@@ -405,6 +717,10 @@ TABS.forEach((t,i)=>{
 function selectTab(id){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
   document.querySelectorAll('.tabview').forEach(v=>v.classList.toggle('active', v.id==='view-'+id));
+  const t=TABS.find(x=>x.id===id);
+  document.getElementById('breadcrumb').innerHTML =
+    `INIT <span class="sep">/</span> <span class="current">${t?t.label:id}</span>`;
+  if(id==='errorlogs' && typeof renderErrorLogs==='function') renderErrorLogs();
 }
 
 const container=document.getElementById('tabContainer');
@@ -414,15 +730,27 @@ TABS.forEach(t=>{
   div.id='view-'+t.id;
   container.appendChild(div);
 });
+selectTab('archiv');
 
 /* ============================= TAB 1: ARCHIV ERSTELLEN ============================= */
 let selectedTyp="IBIS";
+const versionOptions = ["INIT 4.12 (aktuell)","INIT 4.11","INIT 4.10"];
+function showVersionResults(q){
+  const box=document.getElementById('versionResults');
+  const matches=versionOptions.filter(v=>v.toLowerCase().includes((q||'').toLowerCase()));
+  box.innerHTML=matches.map(v=>`<div onclick="pickVersion('${v.replace(/'/g,"\\'")}')">${v}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function pickVersion(v){
+  document.getElementById('version').value=v;
+  document.getElementById('versionResults').classList.remove('show');
+}
 function renderArchiv(){
   const el=document.getElementById('view-archiv');
   el.innerHTML=`
     <div class="panel">
       <h2>Neues Archiv erstellen</h2>
-      <p class="sub">AVG wählt den Archivtyp. AUDIO und PARAMETER benötigen keinen Zeitraum und werden erst bearbeitet, wenn der IBIS-Export abgeschlossen ist.</p>
+      <p class="sub">AVG wählt Version, Archivtyp und Zeitraum. AUDIO und PARAMETER benötigen keinen Zeitraum und werden erst bearbeitet, wenn der IBIS-Export abgeschlossen ist.</p>
 
       <div class="radio-group" id="typGroup">
         ${["IBIS","AUDIO","PARAMETER"].map(t=>`
@@ -430,7 +758,7 @@ function renderArchiv(){
             <input type="radio" name="typ" ${t===selectedTyp?'checked':''}>
             <div>
               <div class="lbl">${t}</div>
-              <div class="desc">${t==='IBIS'?'Fahrplan-/Stammdatenexport für den aktuellen Zeitraum':
+              <div class="desc">${t==='IBIS'?'Fahrplan-/Stammdatenexport inkl. Routenerkennung':
                 t==='AUDIO'?'Audioarchiv – erst nach abgeschlossenem IBIS-Export':
                 'Parameterarchiv – erst nach abgeschlossenem IBIS-Export'}</div>
             </div>
@@ -438,6 +766,14 @@ function renderArchiv(){
       </div>
 
       <div class="field-grid">
+        <div class="field-row">
+          <label>Version</label>
+          <div class="autocomplete">
+            <input type="text" id="version" placeholder="Version suchen…" value="${versionOptions[0]}" ${selectedTyp!=='IBIS'?'disabled':''} oninput="showVersionResults(this.value)" onfocus="showVersionResults(this.value)">
+            <div class="results" id="versionResults"></div>
+          </div>
+        </div>
+        <div></div>
         <div class="field-row">
           <label>Zeitraum von</label>
           <input type="date" id="dateFrom" ${selectedTyp!=='IBIS'?'disabled':''} value="2026-07-01">
@@ -452,7 +788,7 @@ function renderArchiv(){
 
     <div class="panel">
       <h2>Erstellte Archive</h2>
-      <p class="sub">Status wird vom Endpoint geliefert. Verfügbare Optionen hängen vom aktuellen Status ab.</p>
+      <p class="sub">Bei IBIS-Archiven startet zunächst die Routenerkennung. Je nach Ergebnis (Fertig / Neue Routen / Fehler) sind unterschiedliche Aktionen nötig, bevor das Archiv erstellt und per FTP hochgeladen werden kann.</p>
       <table class="data">
         <thead><tr><th>Datum</th><th>Typ</th><th>Status</th><th>Parameter</th><th class="col-actions">Optionen</th></tr></thead>
         <tbody>
@@ -460,9 +796,9 @@ function renderArchiv(){
             <tr>
               <td>${r.datum}</td>
               <td>${r.typ}</td>
-              <td>${statusChip(r.status)}</td>
+              <td>${statusCell(r)}</td>
               <td>${r.parameter}</td>
-              <td class="col-actions">${archiveOptions(r.status)}</td>
+              <td class="col-actions">${archiveOptions(r.status, i)}</td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -471,26 +807,49 @@ function renderArchiv(){
 }
 function setTyp(t){ selectedTyp=t; renderArchiv(); }
 function startArchive(){
+  const version=document.getElementById('version').value;
   const from=document.getElementById('dateFrom').value;
   const to=document.getElementById('dateTo').value;
-  const param = selectedTyp==='IBIS' ? `Zeitraum ${from}–${to}` : (selectedTyp==='AUDIO' ? 'wartet auf IBIS-Export' : 'wartet auf IBIS-Export');
+  const isIBIS = selectedTyp==='IBIS';
+  const param = isIBIS ? `${version} · Zeitraum ${from}–${to}` : 'wartet auf IBIS-Export';
   const now=new Date();
   archiveRows.unshift({
     datum: now.toLocaleDateString('de-DE')+" "+now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),
-    typ:selectedTyp, status:"erstellt", parameter: param
+    typ:selectedTyp, status: isIBIS ? 'routendetection_laeuft' : 'archiv_wird_erstellt', parameter: param
   });
   renderArchiv();
-  toast('Task erstellt – Verarbeitung gestartet (Demo)');
+  toast(isIBIS ? 'Routenerkennung gestartet (Demo)' : 'Archiverstellung gestartet (Demo)');
   const idx=0;
-  setTimeout(()=>{ archiveRows[idx].status = archiveRows[idx].typ==='IBIS' ? 'export_laeuft':'export_laeuft'; renderArchiv(); }, 1400);
-  setTimeout(()=>{ archiveRows[idx].status = 'pruefung_prod'; renderArchiv(); toast('Bereit zur Prüfung'); }, 2800);
+  if(isIBIS){
+    setTimeout(()=>{
+      const outcomes=['fertig','neue_routen','fehler'];
+      const outcome=outcomes[Math.floor(Math.random()*outcomes.length)];
+      archiveRows[idx].status=outcome;
+      if(outcome==='fehler'){
+        archiveRows[idx].errorLog=[
+          {type:"Missing Distances", detail:"Route 56.104: Distanz zwischen zwei Stationen fehlt.", external:false, resolved:false, skipped:false, tab:"routen", tabLabel:"Routen"},
+          {type:"Missing LineNumber", detail:"Route 56.135: Liniennummer ist nicht gesetzt.", external:false, resolved:false, skipped:false, tab:"zielcodes", tabLabel:"Zielcodes"},
+          {type:"Missing Station Coordinates", detail:"Eine Station hat keine GPS-Koordinaten.", external:false, resolved:false, skipped:false, tab:"stationen", tabLabel:"Stationen"},
+          {type:"Missing Schedule Data", detail:"Fahrplan-Release: Abfahrtszeiten unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
+          {type:"Missing Announcement", detail:"Eine Station hat keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
+        ];
+      }
+      renderArchiv();
+      toast('Routenerkennung abgeschlossen: '+(outcome==='fertig'?'Fertig – keine neuen Routen':outcome==='neue_routen'?'Neue Routen erkannt':'Fehler erkannt'));
+    }, 1800);
+  } else {
+    setTimeout(()=>{ archiveRows[idx].status='archiv_erstellt'; renderArchiv(); }, 1400);
+    setTimeout(()=>{ archiveRows[idx].status='upload_laeuft'; renderArchiv(); }, 2400);
+    setTimeout(()=>{ archiveRows[idx].status='abgeschlossen'; renderArchiv(); toast('Upload erfolgreich – Archiv abgeschlossen'); }, 3600);
+  }
 }
-function approveArchive(btn){
-  const row=btn.closest('tr');
-  const idx=[...row.parentNode.children].indexOf(row);
-  archiveRows[idx].status='abgeschlossen';
+function startArchiveCreation(i){
+  archiveRows[i].status='archiv_wird_erstellt';
   renderArchiv();
-  toast('Archiv freigegeben und abgeschlossen');
+  toast('Archiv wird erstellt (Demo)');
+  setTimeout(()=>{ archiveRows[i].status='archiv_erstellt'; renderArchiv(); toast('Archiv erstellt – Upload wird gestartet'); }, 1400);
+  setTimeout(()=>{ archiveRows[i].status='upload_laeuft'; renderArchiv(); }, 2400);
+  setTimeout(()=>{ archiveRows[i].status='abgeschlossen'; renderArchiv(); toast('Upload erfolgreich – Archiv abgeschlossen'); }, 3600);
 }
 renderArchiv();
 
@@ -505,7 +864,9 @@ function renderRouten(){
       <h2>Routen</h2>
       <p class="sub">Nicht editierbar. Jede Spalte ist einzeln sortierbar. Auswahl öffnet die Routenkonfiguration daneben.</p>
       <div class="toolbar">
-        <div class="search">🔎 <input placeholder="Suche…" id="routeSearch" oninput="renderRouten()"></div>
+        <div class="search autocomplete">🔎 <input placeholder="Suche…" id="routeSearch" oninput="renderRouten();showRouteSuggest(this.value)" onfocus="showRouteSuggest(this.value)">
+          <div class="results" id="routeSuggest"></div>
+        </div>
       </div>
       <div style="overflow-x:auto;">
       <table class="data" style="min-width:820px;">
@@ -625,7 +986,9 @@ function renderStationen(){
     <div class="panel">
       <h2>Stationen</h2>
       <p class="sub">Liste wird durch den IBIS-Export synchron zur bhf-Tabelle gehalten. Kein manuelles Hinzufügen oder Löschen möglich.</p>
-      <div class="toolbar"><div class="search">🔎 <input id="stationSearch" placeholder="Suche Station-ID oder Name…" oninput="renderStationen()"></div></div>
+      <div class="toolbar"><div class="search autocomplete">🔎 <input id="stationSearch" placeholder="Suche Station-ID oder Name…" oninput="renderStationen();showStationSuggest(this.value)" onfocus="showStationSuggest(this.value)">
+        <div class="results" id="stationSuggest"></div>
+      </div></div>
       <table class="data">
         <thead><tr>
           <th>Station-ID</th><th>Station</th><th>Ansagennr.</th><th>Ansage</th>
@@ -699,7 +1062,9 @@ function renderZielcodes(){
       <h2>Zielcodes</h2>
       <p class="sub">Ca. ${ZIELCODE_TOTAL.toLocaleString('de-DE')} Zielcodes insgesamt (Demo zeigt Ausschnitt).</p>
       <div class="toolbar">
-        <div class="search">🔎 <input id="zcSearch" placeholder="Suche Zielcode, Linie, Ziel…" oninput="renderZielcodes()"></div>
+        <div class="search autocomplete">🔎 <input id="zcSearch" placeholder="Suche Zielcode, Linie, Ziel…" oninput="renderZielcodes();showZcSuggest(this.value)" onfocus="showZcSuggest(this.value)">
+          <div class="results" id="zcSuggest"></div>
+        </div>
         <div class="spacer"></div>
         <button class="btn primary" onclick="editZielcode(null)">+ Neuen Zielcode erstellen</button>
       </div>
@@ -799,7 +1164,9 @@ function renderLongTable(viewId, rowsRef, total, tableLabel, sortStateKey){
     <div class="panel">
       <h2>${tableLabel}</h2>
       <p class="sub">Feste Tabellengröße von ${total.toLocaleString('de-DE')} Zeilen. Kein manuelles Hinzufügen oder Löschen — nur der Text kann bearbeitet werden.</p>
-      <div class="toolbar"><div class="search">🔎 <input id="${viewId}_search" placeholder="Suche Nummer oder Text…" oninput="searchLongTable('${viewId}')"></div></div>
+      <div class="toolbar"><div class="search autocomplete">🔎 <input id="${viewId}_search" placeholder="Suche Nummer oder Text…" oninput="searchLongTable('${viewId}');showLongSuggest('${viewId}', this.value)" onfocus="showLongSuggest('${viewId}', this.value)">
+        <div class="results" id="${viewId}_suggest"></div>
+      </div></div>
       <table class="data">
         <thead><tr><th class="sortable">Nummer</th><th class="sortable">Text</th><th class="col-actions"></th></tr></thead>
         <tbody>
@@ -898,7 +1265,9 @@ function renderDispo(){
       <h2>Zielcodes für Dispositionsmaßnahmen</h2>
       <p class="sub">Wird von vehicle_interface genutzt, wenn sich der ursprüngliche Zielcode durch eine dispositive Änderung ändert. Ca. 30.000 Zeilen, alle Spalten editierbar.</p>
       <div class="toolbar">
-        <div class="search">🔎 <input id="dispoSearch" placeholder="Suche Linie, Ziel, Code…" oninput="renderDispo()"></div>
+        <div class="search autocomplete">🔎 <input id="dispoSearch" placeholder="Suche Linie, Ziel, Code…" oninput="renderDispo();showDispoSuggest(this.value)" onfocus="showDispoSuggest(this.value)">
+          <div class="results" id="dispoSuggest"></div>
+        </div>
         <div class="spacer"></div>
         <button class="btn primary" onclick="editDispo(null)">+ Neuer Eintrag</button>
       </div>
@@ -967,7 +1336,9 @@ function renderParameter(){
     <div class="panel">
       <h2>Parameterarchiv</h2>
       <p class="sub">Konfiguration der INIT-Fahrzeugsoftware-Parameter. Jedes neue Software-Release kann neue Parameter oder Werte mitbringen; nicht alle sind durch AVG editierbar.</p>
-      <div class="toolbar"><div class="search">🔎 <input id="paramSearch" placeholder="Parameter suchen…" oninput="renderParameter()"></div></div>
+      <div class="toolbar"><div class="search autocomplete">🔎 <input id="paramSearch" placeholder="Parameter suchen…" oninput="renderParameter();showParamSuggest(this.value)" onfocus="showParamSuggest(this.value)">
+        <div class="results" id="paramSuggest"></div>
+      </div></div>
       <table class="data">
         <thead><tr><th>Parameter</th><th>Wert</th><th>Editierbar</th><th>Release</th><th class="col-actions"></th></tr></thead>
         <tbody>
@@ -989,6 +1360,84 @@ function updateParam(name, val){
   p.wert=val;
 }
 renderParameter();
+
+/* ============================= SUCH-VORSCHLÄGE (alle Suchfelder) ============================= */
+function renderSuggestBox(boxId, items, query){
+  const box=document.getElementById(boxId);
+  if(!box) return;
+  const q=(query||'').trim();
+  if(!q){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const shown=items.slice(0,8);
+  box.innerHTML = shown.length ? shown.join('') : `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function showRouteSuggest(q){
+  const query=(q||'').toLowerCase();
+  const matches=routesList.filter(r=>r.idRoute.includes(query)||r.bezeichnung.toLowerCase().includes(query))
+    .map(r=>`<div onclick="pickRouteSuggest('${r.idRoute}')"><b>${r.idRoute}</b> — ${r.bezeichnung}</div>`);
+  renderSuggestBox('routeSuggest', matches, q);
+}
+function pickRouteSuggest(idRoute){
+  document.getElementById('routeSearch').value=idRoute;
+  document.getElementById('routeSuggest').classList.remove('show');
+  renderRouten();
+}
+function showStationSuggest(q){
+  const query=(q||'').toLowerCase();
+  const matches=stationenRows.filter(r=>r.id.toLowerCase().includes(query)||r.name.toLowerCase().includes(query))
+    .map(r=>`<div onclick="pickStationSuggest('${r.id}')"><b>${r.id}</b> — ${r.name}</div>`);
+  renderSuggestBox('stationSuggest', matches, q);
+}
+function pickStationSuggest(id){
+  document.getElementById('stationSearch').value=id;
+  document.getElementById('stationSuggest').classList.remove('show');
+  renderStationen();
+}
+function showZcSuggest(q){
+  const query=(q||'').toLowerCase();
+  const matches=zielcodeRows.filter(r=>r.code.includes(query)||r.zielText.toLowerCase().includes(query)||r.linieText.toLowerCase().includes(query))
+    .map(r=>`<div onclick="pickZcSuggest('${r.code}')"><b>${r.code}</b> — ${r.linieText} · ${r.zielText}</div>`);
+  renderSuggestBox('zcSuggest', matches, q);
+}
+function pickZcSuggest(code){
+  document.getElementById('zcSearch').value=code;
+  document.getElementById('zcSuggest').classList.remove('show');
+  renderZielcodes();
+}
+function showLongSuggest(viewId, q){
+  const map = viewId==='view-zieltexte' ? zieltexteRows : linientexteRows;
+  const query=(q||'').toLowerCase();
+  const matches=map.filter(r=>r.nummer.includes(query)||(r.text||'').toLowerCase().includes(query)).slice(0,50)
+    .map(r=>`<div onclick="pickLongSuggest('${viewId}','${r.nummer}')"><b>${r.nummer}</b> — ${r.text||'— leer —'}</div>`);
+  renderSuggestBox(viewId+'_suggest', matches, q);
+}
+function pickLongSuggest(viewId, nummer){
+  document.getElementById(viewId+'_search').value=nummer;
+  document.getElementById(viewId+'_suggest').classList.remove('show');
+  if(viewId==='view-zieltexte') renderZieltexte(); else renderLinientexte();
+}
+function showDispoSuggest(q){
+  const query=(q||'').toLowerCase();
+  const matches=dispoRows.filter(r=>r.linie.toLowerCase().includes(query)||r.ziel.toLowerCase().includes(query)||r.code.includes(query))
+    .map(r=>`<div onclick="pickDispoSuggest('${r.code}')"><b>${r.code}</b> — ${r.linie} · ${r.ziel}</div>`);
+  renderSuggestBox('dispoSuggest', matches, q);
+}
+function pickDispoSuggest(code){
+  document.getElementById('dispoSearch').value=code;
+  document.getElementById('dispoSuggest').classList.remove('show');
+  renderDispo();
+}
+function showParamSuggest(q){
+  const query=(q||'').toLowerCase();
+  const matches=parameterRows.filter(r=>r.name.toLowerCase().includes(query))
+    .map(r=>`<div onclick="pickParamSuggest('${r.name}')">${r.name}</div>`);
+  renderSuggestBox('paramSuggest', matches, q);
+}
+function pickParamSuggest(name){
+  document.getElementById('paramSearch').value=name;
+  document.getElementById('paramSuggest').classList.remove('show');
+  renderParameter();
+}
 </script>
 </body>
 </html>
