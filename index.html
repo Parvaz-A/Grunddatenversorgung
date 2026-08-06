@@ -76,10 +76,10 @@
   .dl-menu{
     display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;
     border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 20px rgba(0,0,0,.14);
-    min-width:230px;z-index:40;overflow:hidden;
+    min-width:140px;z-index:40;overflow:hidden;
   }
   .dl-menu.show{display:block;}
-  .dl-menu div{padding:10px 14px;font-size:12.5px;cursor:pointer;white-space:nowrap;}
+  .dl-menu div{padding:7px 12px;font-size:12px;cursor:pointer;white-space:nowrap;}
   .dl-menu div:hover{background:var(--primary-light);color:var(--primary);}
 
   .mini-stepper{display:flex;align-items:center;gap:6px;font-size:11px;flex-wrap:wrap;}
@@ -122,6 +122,13 @@
   button.btn.danger-ghost{background:none;border-color:var(--border);color:var(--err);}
   button.btn.danger-ghost:hover{border-color:var(--err);background:var(--err-bg);}
   button.btn.small{padding:5px 10px;font-size:12px;}
+  button.icon-btn{
+    width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:#fff;
+    color:var(--text-muted);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+    margin-left:4px;line-height:1;padding:0;
+  }
+  button.icon-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light);}
+  button.icon-btn.danger:hover{border-color:var(--err);color:var(--err);background:var(--err-bg);}
   button.btn:disabled{opacity:.45;cursor:not-allowed;}
 
   table.data{width:100%;border-collapse:collapse;font-size:13px;}
@@ -435,34 +442,36 @@ function statusChip(status){
   return `<span class="chip ${cls}">${label}</span>`;
 }
 function archiveOptions(status, i){
-  if(status==="routendetection_laeuft") return `<button class="btn small ghost" disabled>Routenerkennung läuft…</button>`;
-  if(status==="fertig" || status==="bereit"){
-    return `<button class="btn small primary" onclick="startArchiveCreation(${i})">Archiv erstellen</button>`;
-  }
-  if(status==="neue_routen"){
-    return `
+  const r=archiveRows[i];
+  const hasError = status==="fehler" || r.hasSkippedError;
+
+  let statusAction = "";
+  if(status==="routendetection_laeuft") statusAction = `<button class="btn small ghost" disabled>Routenerkennung läuft…</button>`;
+  else if(status==="neue_routen") statusAction = `
       <button class="btn small primary" onclick="goToRoutenConfig(${i})">Routen konfigurieren</button>
-      <button class="btn small ghost" style="margin-left:6px;" onclick="markRoutesConfigured(${i})">Konfiguriert</button>
+      <button class="btn small ghost" onclick="markRoutesConfigured(${i})">Konfiguriert</button>
     `;
-  }
-  if(status==="fehler"){
-    return `<button class="btn small danger-ghost" onclick="renderErrorLogModal(${i})">Details ansehen</button>`;
-  }
-  if(status==="archiv_wird_erstellt") return `<button class="btn small ghost" disabled>Archiv wird erstellt…</button>`;
-  if(status==="archiv_erstellt") return `<button class="btn small ghost" disabled>Upload wird gestartet…</button>`;
-  if(status==="upload_laeuft") return `<button class="btn small ghost" disabled>Upload läuft…</button>`;
-  if(status==="abgeschlossen"){
-    return `
-      <div class="dl-wrap">
-        <button class="btn small ghost" onclick="toggleDownloadMenu(${i})">Herunterladen ▾</button>
-        <div class="dl-menu" id="dlMenu_${i}">
-          <div onclick="downloadArchive(${i},'gesamt')">Alle Routen</div>
-          <div onclick="downloadArchive(${i},'neue_routen')">Neue Routen</div>
-        </div>
+  else if(status==="archiv_wird_erstellt") statusAction = `<button class="btn small ghost" disabled>Archiv wird erstellt…</button>`;
+  else if(status==="archiv_erstellt") statusAction = `<button class="btn small ghost" disabled>Upload wird gestartet…</button>`;
+  else if(status==="upload_laeuft") statusAction = `<button class="btn small ghost" disabled>Upload läuft…</button>`;
+
+  const downloadAndCreate = `
+    <div class="dl-wrap">
+      <button class="btn small ghost" onclick="toggleDownloadMenu(${i})">Herunterladen ▾</button>
+      <div class="dl-menu" id="dlMenu_${i}">
+        <div onclick="downloadArchive(${i},'gesamt')">Alle Routen</div>
+        <div onclick="downloadArchive(${i},'neue_routen')">Neue Routen</div>
       </div>
-    `;
-  }
-  return "";
+    </div>
+    <button class="btn small primary" onclick="startArchiveCreation(${i})">Archiv erstellen</button>
+  `;
+
+  const errorLink = hasError ? `<button class="btn small danger-ghost" onclick="renderErrorLogModal(${i})">Details ansehen</button>` : '';
+
+  return `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${statusAction}${downloadAndCreate}</div>
+    ${errorLink ? `<div style="margin-top:6px;text-align:right;">${errorLink}</div>` : ''}
+  `;
 }
 function toggleDownloadMenu(i){
   document.querySelectorAll('.dl-menu').forEach(m=>{ if(m.id!=='dlMenu_'+i) m.classList.remove('show'); });
@@ -553,147 +562,9 @@ function markRoutesConfigured(i){
   toast('Routen konfiguriert – Status: Abgeschlossen');
 }
 
-/* ============================= TAB: ERROR LOGS ============================= */
-let errorLogExpanded = new Set();
-function renderErrorLogs(){
-  const el=document.getElementById('view-errorlogs');
-  const rows=[];
-  archiveRows.forEach((r,i)=>{ if(r.errorLog) r.errorLog.forEach((e,j)=>rows.push({i,j,e,r})); });
-  el.innerHTML=`
-    <div class="panel">
-      <h2>Error Logs</h2>
-      <p class="sub">Alle von der Routenerkennung gefundenen Fehler, archivübergreifend. Zeile öffnen und direkt korrigieren.</p>
-      ${rows.length===0 ? `<div class="empty-state">Aktuell keine Fehler vorhanden.</div>` : `
-      <div class="errorlog-header">
-        <span></span>
-        <span>Fehlertyp</span>
-        <span>Archiv</span>
-        <span>Ziel-Tab</span>
-        <span>Status</span>
-        <span></span>
-      </div>
-      <div class="errorlog-list">
-        ${rows.map(({i,j,e,r})=>{
-          const key=i+'-'+j;
-          const open=errorLogExpanded.has(key);
-          const handled = e.resolved||e.skipped;
-          const statusChipHtml = e.resolved?'<span class="chip ok">✓ Behoben</span>':e.skipped?'<span class="chip warn">Übersprungen</span>':'<span class="chip err">Offen</span>';
-          return `
-          <div class="errorlog-item ${open?'open':''} ${handled?'handled':''}">
-            <div class="errorlog-row" onclick="toggleErrorLogRow('${key}')">
-              <span class="errorlog-caret">${open?'▲':'▼'}</span>
-              <span class="errorlog-type">${e.type}${e.external?' <span class="chip neutral">Extern</span>':''}</span>
-              <span class="errorlog-meta">${r.datum} · ${r.typ}</span>
-              <span class="errorlog-meta">${e.tabLabel||'—'}</span>
-              <span class="errorlog-status">${statusChipHtml}</span>
-              <span class="errorlog-link">${handled?'':'FEHLER ANZEIGEN'}</span>
-            </div>
-            ${open?`
-            <div class="errorlog-detail">
-              <div class="errorlog-detail-text">${e.detail}</div>
-              ${e.resolved?`<div class="chip ok">Bereits behoben</div>`:
-                e.skipped?`<div class="chip warn">Bereits übersprungen – bleibt markiert</div>`:
-                e.external?`
-                  <p class="hint" style="margin:0 0 10px;">Diese Korrektur erfolgt in einem externen System und kann hier nicht direkt bearbeitet werden.</p>
-                  <button class="btn small ghost" onclick="skipErrorFromLogs(${i},${j})">Überspringen</button>
-                `:
-                `
-                <div class="errorlog-fix">${getInlineFixFields(e,i,j)}</div>
-                <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
-                  <button class="btn small primary" onclick="saveInlineCorrection(${i},${j})">Korrigieren &amp; Speichern</button>
-                  <button class="btn small ghost" onclick="goToErrorTabFromLogs(${i},${j})">Stattdessen in ${e.tabLabel} bearbeiten</button>
-                </div>
-                `}
-            </div>`:''}
-          </div>
-          `;
-        }).join('')}
-      </div>
-      `}
-    </div>
-  `;
-}
-function getInlineFixFields(e,i,j){
-  const id=`fix_${i}_${j}`;
-  if(e.type==="Missing Distances"){
-    return `<div class="field-row"><label>Distanz zur nächsten Station (Meter)</label><input type="number" min="0" id="${id}" placeholder="z. B. 850"></div>`;
-  }
-  if(e.type==="Missing LineNumber"){
-    return `<div class="field-row"><label>Liniennummer</label><input type="text" id="${id}" placeholder="z. B. S71"></div>`;
-  }
-  if(e.type==="Missing Station Coordinates"){
-    return `<div class="field-grid">
-      <div class="field-row"><label>Breitengrad (Lat)</label><input type="text" id="${id}_lat" placeholder="z. B. 48.8586"></div>
-      <div class="field-row"><label>Längengrad (Lon)</label><input type="text" id="${id}_lon" placeholder="z. B. 8.3599"></div>
-    </div>`;
-  }
-  if(e.type==="Missing Announcement"){
-    return `
-      <div class="field-row">
-        <label>Ansage zuordnen</label>
-        <div class="autocomplete">
-          <input type="text" id="${id}" placeholder="Ansage suchen…" oninput="showFixAnsageResults(${i},${j},this.value)" onfocus="showFixAnsageResults(${i},${j},this.value)">
-          <div class="results" id="${id}_results"></div>
-        </div>
-      </div>`;
-  }
-  return `<div class="field-row"><label>Wert</label><input type="text" id="${id}" placeholder="Korrektur eingeben…"></div>`;
-}
-function showFixAnsageResults(i,j,q){
-  const box=document.getElementById(`fix_${i}_${j}_results`);
-  const matches=ansageOptions.filter(a=>a.num.includes(q)||a.text.toLowerCase().includes((q||'').toLowerCase()));
-  box.innerHTML=matches.map(a=>`<div onclick="pickFixAnsage(${i},${j},'${a.num}','${a.text.replace(/'/g,"\\'")}')"><b>${a.num}</b> — ${a.text}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
-  box.classList.add('show');
-}
-function pickFixAnsage(i,j,num,text){
-  document.getElementById(`fix_${i}_${j}`).value = num+" – "+text;
-  document.getElementById(`fix_${i}_${j}_results`).classList.remove('show');
-}
-function saveInlineCorrection(i,j){
-  const e=archiveRows[i].errorLog[j];
-  const id=`fix_${i}_${j}`;
-  if(e.type==="Missing Station Coordinates"){
-    const lat=document.getElementById(id+'_lat').value, lon=document.getElementById(id+'_lon').value;
-    if(!lat||!lon){ toast('Bitte beide Koordinaten eingeben'); return; }
-  } else {
-    const val=document.getElementById(id)?.value;
-    if(!val){ toast('Bitte einen Wert eingeben'); return; }
-  }
-  e.resolved=true;
-  renderErrorLogs();
-  renderArchiv();
-  toast(e.type+' korrigiert und gespeichert');
-}
-function toggleErrorLogRow(key){
-  if(errorLogExpanded.has(key)) errorLogExpanded.delete(key); else errorLogExpanded.add(key);
-  renderErrorLogs();
-}
-function goToErrorTabFromLogs(i,j){
-  goToErrorTab(i,j);
-}
-function skipErrorFromLogs(i,j){
-  const e=archiveRows[i].errorLog[j];
-  openModal(`
-    <h3>Sind Sie sicher?</h3>
-    <p class="sub">„${e.type}" wird als externer Fahrplanfehler übersprungen. Der Fehler bleibt in der Liste sichtbar markiert.</p>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
-      <button class="btn primary" onclick="confirmSkipErrorFromLogs(${i},${j})">Ja, überspringen</button>
-    </div>
-  `);
-}
-function confirmSkipErrorFromLogs(i,j){
-  archiveRows[i].errorLog[j].skipped=true;
-  closeModal();
-  renderErrorLogs();
-  renderArchiv();
-  toast('Fehler übersprungen – bleibt markiert');
-}
-
 /* ============================= TABS ============================= */
 const TABS = [
   {id:"archiv", label:"Archiv erstellen"},
-  {id:"errorlogs", label:"Error Logs"},
   {id:"routen", label:"Routen"},
   {id:"stationen", label:"Stationen"},
   {id:"zielcodes", label:"Zielcodes"},
@@ -720,7 +591,6 @@ function selectTab(id){
   const t=TABS.find(x=>x.id===id);
   document.getElementById('breadcrumb').innerHTML =
     `INIT <span class="sep">/</span> <span class="current">${t?t.label:id}</span>`;
-  if(id==='errorlogs' && typeof renderErrorLogs==='function') renderErrorLogs();
 }
 
 const container=document.getElementById('tabContainer');
@@ -734,23 +604,12 @@ selectTab('archiv');
 
 /* ============================= TAB 1: ARCHIV ERSTELLEN ============================= */
 let selectedTyp="IBIS";
-const versionOptions = ["INIT 4.12 (aktuell)","INIT 4.11","INIT 4.10"];
-function showVersionResults(q){
-  const box=document.getElementById('versionResults');
-  const matches=versionOptions.filter(v=>v.toLowerCase().includes((q||'').toLowerCase()));
-  box.innerHTML=matches.map(v=>`<div onclick="pickVersion('${v.replace(/'/g,"\\'")}')">${v}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
-  box.classList.add('show');
-}
-function pickVersion(v){
-  document.getElementById('version').value=v;
-  document.getElementById('versionResults').classList.remove('show');
-}
 function renderArchiv(){
   const el=document.getElementById('view-archiv');
   el.innerHTML=`
     <div class="panel">
       <h2>Neues Archiv erstellen</h2>
-      <p class="sub">AVG wählt Version, Archivtyp und Zeitraum. AUDIO und PARAMETER benötigen keinen Zeitraum und werden erst bearbeitet, wenn der IBIS-Export abgeschlossen ist.</p>
+      <p class="sub">AVG wählt Archivtyp und Zeitraum. AUDIO und PARAMETER benötigen keinen Zeitraum und werden erst bearbeitet, wenn der IBIS-Export abgeschlossen ist.</p>
 
       <div class="radio-group" id="typGroup">
         ${["IBIS","AUDIO","PARAMETER"].map(t=>`
@@ -767,14 +626,6 @@ function renderArchiv(){
 
       <div class="field-grid">
         <div class="field-row">
-          <label>Version</label>
-          <div class="autocomplete">
-            <input type="text" id="version" placeholder="Version suchen…" value="${versionOptions[0]}" ${selectedTyp!=='IBIS'?'disabled':''} oninput="showVersionResults(this.value)" onfocus="showVersionResults(this.value)">
-            <div class="results" id="versionResults"></div>
-          </div>
-        </div>
-        <div></div>
-        <div class="field-row">
           <label>Zeitraum von</label>
           <input type="date" id="dateFrom" ${selectedTyp!=='IBIS'?'disabled':''} value="2026-07-01">
         </div>
@@ -790,7 +641,7 @@ function renderArchiv(){
       <h2>Erstellte Archive</h2>
       <p class="sub">Bei IBIS-Archiven startet zunächst die Routenerkennung. Je nach Ergebnis (Fertig / Neue Routen / Fehler) sind unterschiedliche Aktionen nötig, bevor das Archiv erstellt und per FTP hochgeladen werden kann.</p>
       <table class="data">
-        <thead><tr><th>Datum</th><th>Typ</th><th>Status</th><th>Parameter</th><th class="col-actions">Optionen</th></tr></thead>
+        <thead><tr><th>Datum</th><th>Typ</th><th>Status</th><th>Parameter</th><th class="col-actions">Action</th></tr></thead>
         <tbody>
           ${archiveRows.map((r,i)=>`
             <tr>
@@ -807,11 +658,10 @@ function renderArchiv(){
 }
 function setTyp(t){ selectedTyp=t; renderArchiv(); }
 function startArchive(){
-  const version=document.getElementById('version').value;
   const from=document.getElementById('dateFrom').value;
   const to=document.getElementById('dateTo').value;
   const isIBIS = selectedTyp==='IBIS';
-  const param = isIBIS ? `${version} · Zeitraum ${from}–${to}` : 'wartet auf IBIS-Export';
+  const param = isIBIS ? `Zeitraum ${from}–${to}` : 'wartet auf IBIS-Export';
   const now=new Date();
   archiveRows.unshift({
     datum: now.toLocaleDateString('de-DE')+" "+now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),
@@ -1216,41 +1066,46 @@ function renderAnsagen(){
   el.innerHTML=`
     <div class="panel">
       <div class="note-banner">Konzept noch nicht final abgestimmt: Ansagenkonfiguration &amp; Audioarchiv-Erstellung sind vom IBIS-Export getrennt. IBIS hat Priorität, dieser Bereich zeigt einen ersten Entwurf.</div>
-      <h2>Audiofragmente</h2>
-      <p class="sub">AVG lädt Audiodateien hoch — neue Dateinamen oder Ersetzung bestehender Dateien.</p>
-      <div class="toolbar">
-        <button class="btn primary" onclick="toast('Datei-Upload geöffnet (Demo)')">⬆ Audiodatei hochladen</button>
-      </div>
-      <table class="data">
-        <thead><tr><th>Dateiname</th><th>Größe</th><th>Hochgeladen</th><th class="col-actions"></th></tr></thead>
-        <tbody>
-          <tr><td>9999.mp3</td><td>142 KB</td><td>29.06.2026</td><td class="col-actions"><button class="btn small ghost" onclick="toast('Wiedergabe (Demo)')">▶ Abspielen</button></td></tr>
-          <tr><td>VordAnsage_1.mp3</td><td>88 KB</td><td>29.06.2026</td><td class="col-actions"><button class="btn small ghost" onclick="toast('Wiedergabe (Demo)')">▶ Abspielen</button></td></tr>
-          <tr><td>9941.mp3</td><td>63 KB</td><td>20.06.2026</td><td class="col-actions"><button class="btn small ghost" onclick="toast('Wiedergabe (Demo)')">▶ Abspielen</button></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="panel">
       <h2>Playlist – Ansagen &amp; Funktionsansagen</h2>
       <p class="sub">Reihenfolge der Audiofragmente je Ansagenummer. Nummern ab 110.001 sind Funktionsansagen mit fixer Nummer.</p>
-      <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="addPlaylistRow()">+ Fragment hinzufügen</button></div>
+      <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openAudioUploadDialog()">⬆ Audio hochladen</button></div>
       <table class="data">
         <thead><tr><th>Nummer</th><th>Fragment</th><th>Dateiname</th><th class="col-actions"></th></tr></thead>
         <tbody>
           ${playlistRows.map((p,i)=>`
             <tr><td>${p.nummer}</td><td>${p.fragment}</td><td>${p.filename}</td>
               <td class="col-actions">
-                <button class="btn small ghost" onclick="toast('Fragment bearbeitet (Demo)')">Bearbeiten</button>
-                <button class="btn small danger-ghost" onclick="deletePlaylistRow(${i})">Löschen</button>
+                <button class="icon-btn" title="Abspielen" onclick="toast('Wiedergabe (Demo)')">▶</button>
+                <button class="icon-btn" title="Bearbeiten" onclick="toast('Fragment bearbeiten (Demo)')">✎</button>
+                <button class="icon-btn danger" title="Löschen" onclick="deletePlaylistRow(${i})">🗑</button>
               </td></tr>`).join('')}
         </tbody>
       </table>
     </div>
   `;
 }
-function addPlaylistRow(){
-  playlistRows.push({nummer:"9.999", fragment: playlistRows.length+1, filename:"neue_datei.mp3"});
-  renderAnsagen(); toast('Fragment hinzugefügt (Demo)');
+function openAudioUploadDialog(){
+  openModal(`
+    <h3>Audio hochladen</h3>
+    <p class="sub">Neue Audiodatei hochladen oder eine bestehende Datei ersetzen.</p>
+    <div class="field-row"><label>Datei</label><input type="file" id="audioFile" accept="audio/*"></div>
+    <div class="field-row"><label>Ansagenummer</label><input type="text" id="audioNummer" placeholder="z. B. 9.941"></div>
+    <div class="field-row"><label>Fragment</label><input type="number" id="audioFragment" min="1" placeholder="z. B. 1"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="confirmAudioUpload()">Hochladen</button>
+    </div>
+  `);
+}
+function confirmAudioUpload(){
+  const fileInput=document.getElementById('audioFile');
+  const nummer=document.getElementById('audioNummer').value || '9.999';
+  const fragment=parseInt(document.getElementById('audioFragment').value) || (playlistRows.length+1);
+  const filename = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'neue_datei.mp3';
+  playlistRows.push({nummer, fragment, filename});
+  closeModal();
+  renderAnsagen();
+  toast('Audio hochgeladen (Demo): '+filename);
 }
 function deletePlaylistRow(i){ playlistRows.splice(i,1); renderAnsagen(); toast('Fragment gelöscht'); }
 renderAnsagen();
