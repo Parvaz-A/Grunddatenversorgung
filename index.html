@@ -402,10 +402,10 @@ let parameterRows = [
 ];
 
 let playlistRows = [
-  {nummer:"9.941", fragment:1, filename:"9999.mp3"},
-  {nummer:"9.941", fragment:2, filename:"9941.mp3"},
-  {nummer:"110.001", fragment:1, filename:"9999.mp3"},
-  {nummer:"110.001", fragment:2, filename:"VordAnsage_1.mp3"},
+  {nummer:"9.941", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage"},
+  {nummer:"9.941", fragment:2, filename:"9941.mp3", beschreibung:"Dunantstraße"},
+  {nummer:"110.001", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage"},
+  {nummer:"110.001", fragment:2, filename:"VordAnsage_1.mp3", beschreibung:"Vorabansage nächster Halt"},
 ];
 
 /* ============================= HELPERS ============================= */
@@ -1070,10 +1070,10 @@ function renderAnsagen(){
       <p class="sub">Reihenfolge der Audiofragmente je Ansagenummer. Nummern ab 110.001 sind Funktionsansagen mit fixer Nummer.</p>
       <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openAudioUploadDialog()">⬆ Audio hochladen</button></div>
       <table class="data">
-        <thead><tr><th>Nummer</th><th>Fragment</th><th>Dateiname</th><th class="col-actions"></th></tr></thead>
+        <thead><tr><th>Nummer</th><th>Fragment</th><th>Dateiname</th><th>Beschreibung</th><th class="col-actions"></th></tr></thead>
         <tbody>
           ${playlistRows.map((p,i)=>`
-            <tr><td>${p.nummer}</td><td>${p.fragment}</td><td>${p.filename}</td>
+            <tr><td>${p.nummer}</td><td>${p.fragment}</td><td>${p.filename}</td><td>${p.beschreibung||'—'}</td>
               <td class="col-actions">
                 <button class="icon-btn" title="Abspielen" onclick="toast('Wiedergabe (Demo)')">▶</button>
                 <button class="icon-btn" title="Bearbeiten" onclick="toast('Fragment bearbeiten (Demo)')">✎</button>
@@ -1091,6 +1091,7 @@ function openAudioUploadDialog(){
     <div class="field-row"><label>Datei</label><input type="file" id="audioFile" accept="audio/*"></div>
     <div class="field-row"><label>Ansagenummer</label><input type="text" id="audioNummer" placeholder="z. B. 9.941"></div>
     <div class="field-row"><label>Fragment</label><input type="number" id="audioFragment" min="1" placeholder="z. B. 1"></div>
+    <div class="field-row"><label>Beschreibung</label><input type="text" id="audioBeschreibung" placeholder="z. B. Türfreigabe-Ansage"></div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
       <button class="btn primary" onclick="confirmAudioUpload()">Hochladen</button>
@@ -1101,8 +1102,9 @@ function confirmAudioUpload(){
   const fileInput=document.getElementById('audioFile');
   const nummer=document.getElementById('audioNummer').value || '9.999';
   const fragment=parseInt(document.getElementById('audioFragment').value) || (playlistRows.length+1);
+  const beschreibung=document.getElementById('audioBeschreibung').value || '';
   const filename = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'neue_datei.mp3';
-  playlistRows.push({nummer, fragment, filename});
+  playlistRows.push({nummer, fragment, filename, beschreibung});
   closeModal();
   renderAnsagen();
   toast('Audio hochgeladen (Demo): '+filename);
