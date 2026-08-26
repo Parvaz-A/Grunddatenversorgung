@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AVG – UI Requirements (DATNETAV-845) Klickdummy</title>
 <style>
   :root{
@@ -208,6 +209,17 @@
   .badge-tab-count{background:#eceff1;color:var(--text-muted);border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:6px;}
   .note-banner{background:var(--warn-bg);border:1px solid #ffe0b2;color:var(--warn);border-radius:6px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;}
 
+  .playlist-groups{display:flex;flex-direction:column;gap:14px;}
+  .playlist-group{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .playlist-group-header{
+    display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f7f8fa;border-bottom:1px solid var(--border);flex-wrap:wrap;
+  }
+  .playlist-group-nummer{font-weight:600;font-size:13px;}
+  .playlist-group-titel{font-weight:500;font-size:12.5px;color:var(--text);}
+  .playlist-group-desc{color:var(--text-muted);font-size:12.5px;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .playlist-group-table{margin:0;}
+  .playlist-group-table th{background:#fff;}
+
   .errorlog-header{
     display:grid;grid-template-columns:22px 1.6fr 1.1fr 0.8fr 0.9fr 1fr;
     align-items:center;gap:10px;padding:9px 16px;
@@ -299,6 +311,14 @@ let archiveRows = [
       {type:"Missing Schedule Data", detail:"Fahrplan-Release 2026-08: Abfahrtszeiten für Linie S4 unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
       {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
     ]},
+  {datum:"02.07.2026 09:05", typ:"IBIS", status:"fehler", parameter:"INIT 4.12 (aktuell) · Zeitraum 01.09.–30.09.2026",
+    errorLog:[
+      {type:"Missing Distances", detail:"Route 56.104: Distanz zwischen 'Rastatt' und 'Rastatt Süd' fehlt.", external:false, resolved:true, skipped:false, tab:"routen", tabLabel:"Routen"},
+      {type:"Missing LineNumber", detail:"Route 56.135: Liniennummer ist nicht gesetzt.", external:false, resolved:true, skipped:false, tab:"zielcodes", tabLabel:"Zielcodes"},
+      {type:"Missing Station Coordinates", detail:"Station 'Reutlingen West': GPS-Koordinaten fehlen.", external:false, resolved:true, skipped:false, tab:"stationen", tabLabel:"Stationen"},
+      {type:"Missing Schedule Data", detail:"Fahrplan-Release 2026-09: Abfahrtszeiten für Linie S7 unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
+      {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:true, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
+    ]},
 ];
 
 /* Routen-Sidebar: Spalten wie im Ticket-Screenshot (ID-Route, ID Stammroute bei Schwächung,
@@ -368,11 +388,17 @@ let stationenRows = [
 ];
 
 let zielcodeRows = [
-  {code:"01041", linieNum:"41", linieText:"S1", zielNum:"104", zielText:"Karlsruhe Albtalbahnhof", multi:"Karlsruhe Albtalbahnhof", innen:"Albtalbahnhof", fahrer:"S1 Albtalbahnhof"},
-  {code:"01103", linieNum:"44", linieText:"S4", zielNum:"110", zielText:"Öttingen West", multi:"Öttingen West", innen:"Öttingen West", fahrer:"S4 Öttingen West"},
-  {code:"01150", linieNum:"44", linieText:"S4", zielNum:"115", zielText:"Achern", multi:"Achern", innen:"Achern", fahrer:"S4 Achern"},
-  {code:"01207", linieNum:"47", linieText:"S7", zielNum:"120", zielText:"Bad Wildbad", multi:"Bad Wildbad", innen:"Bad Wildbad", fahrer:"S7 Bad Wildbad"},
+  {code:"01041", linieNum:"41", linieText:"S1", zielNum:"104", zielText:"Karlsruhe Albtalbahnhof", multi:"Karlsruhe Albtalbahnhof", innen:"Albtalbahnhof", fahrer:"S1 Albtalbahnhof",
+    iconFront:"Compo2", textFrontZ1:"S1", textFrontZ2:"Albtalbahnhof", iconSeite:"Arrow1", textSeiteZ1:"S1", textSeiteZ2:"Albtalbahnhof"},
+  {code:"01103", linieNum:"44", linieText:"S4", zielNum:"110", zielText:"Öttingen West", multi:"Öttingen West", innen:"Öttingen West", fahrer:"S4 Öttingen West",
+    iconFront:"Compo3", textFrontZ1:"S4", textFrontZ2:"Öttingen West", iconSeite:"Arrow2", textSeiteZ1:"S4", textSeiteZ2:"Öttingen West"},
+  {code:"01150", linieNum:"44", linieText:"S4", zielNum:"115", zielText:"Achern", multi:"Achern", innen:"Achern", fahrer:"S4 Achern",
+    iconFront:"Compo2", textFrontZ1:"S4", textFrontZ2:"Achern", iconSeite:"Arrow1", textSeiteZ1:"S4", textSeiteZ2:"Achern"},
+  {code:"01207", linieNum:"47", linieText:"S7", zielNum:"120", zielText:"Bad Wildbad", multi:"Bad Wildbad", innen:"Bad Wildbad", fahrer:"S7 Bad Wildbad",
+    iconFront:"Compo4", textFrontZ1:"S7", textFrontZ2:"Bad Wildbad", iconSeite:"Arrow2", textSeiteZ1:"S7", textSeiteZ2:"Bad Wildbad"},
 ];
+const ICON_OPTIONS = ["Compo2","Compo3","Compo4","Arrow1","Arrow2","Bus","Bahn","Info","Sonder","Betriebshof"];
+
 const ZIELCODE_TOTAL = 50000;
 
 function genLongList(n, prefix){
@@ -401,11 +427,16 @@ let parameterRows = [
   {name:"ibis.export.retry_count", wert:"3", editable:false, release:"INIT 4.08"},
 ];
 
+let audioFragmentsRows = [
+  {fragmentNummer:"1", filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage", uploaded:"29.06.2026"},
+  {fragmentNummer:"2", filename:"9941.mp3", beschreibung:"Dunantstraße", uploaded:"29.06.2026"},
+  {fragmentNummer:"3", filename:"VordAnsage_1.mp3", beschreibung:"Vorabansage nächster Halt", uploaded:"20.06.2026"},
+];
 let playlistRows = [
-  {nummer:"9.941", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage"},
-  {nummer:"9.941", fragment:2, filename:"9941.mp3", beschreibung:"Dunantstraße"},
-  {nummer:"110.001", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage"},
-  {nummer:"110.001", fragment:2, filename:"VordAnsage_1.mp3", beschreibung:"Vorabansage nächster Halt"},
+  {nummer:"9.941", typ:"Ansage", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage", titel:"Türfreigabe Dunantstraße"},
+  {nummer:"9.941", typ:"Ansage", fragment:2, filename:"9941.mp3", beschreibung:"Dunantstraße", titel:"Türfreigabe Dunantstraße"},
+  {nummer:"110.001", typ:"Funktionsansage", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage", titel:"Standardansage nächster Halt"},
+  {nummer:"110.001", typ:"Funktionsansage", fragment:2, filename:"VordAnsage_1.mp3", beschreibung:"Vorabansage nächster Halt", titel:"Standardansage nächster Halt"},
 ];
 
 /* ============================= HELPERS ============================= */
@@ -432,9 +463,9 @@ function statusChip(status){
     "fertig":["ok","Fertig"],
     "neue_routen":["warn","Neue Routen"],
     "fehler":["err","Fehler"],
-    "bereit":["ok","Abgeschlossen"],
+    "bereit":["ok","Bereit zum Export"],
     "archiv_wird_erstellt":["info","Archiv wird erstellt"],
-    "archiv_erstellt":["ok","Abgeschlossen"],
+    "archiv_erstellt":["ok","Archiv erstellt"],
     "upload_laeuft":["info","Upload läuft"],
     "abgeschlossen":["ok","Abgeschlossen"],
   };
@@ -447,31 +478,26 @@ function archiveOptions(status, i){
 
   let statusAction = "";
   if(status==="routendetection_laeuft") statusAction = `<button class="btn small ghost" disabled>Routenerkennung läuft…</button>`;
-  else if(status==="neue_routen") statusAction = `
-      <button class="btn small primary" onclick="goToRoutenConfig(${i})">Routen konfigurieren</button>
-      <button class="btn small ghost" onclick="markRoutesConfigured(${i})">Konfiguriert</button>
-    `;
+  else if(status==="neue_routen") statusAction = `<button class="btn small primary" onclick="goToRoutenConfig(${i})">Routen konfigurieren</button>`;
   else if(status==="archiv_wird_erstellt") statusAction = `<button class="btn small ghost" disabled>Archiv wird erstellt…</button>`;
   else if(status==="archiv_erstellt") statusAction = `<button class="btn small ghost" disabled>Upload wird gestartet…</button>`;
   else if(status==="upload_laeuft") statusAction = `<button class="btn small ghost" disabled>Upload läuft…</button>`;
 
-  const downloadAndCreate = `
+  const downloadBtn = `
     <div class="dl-wrap">
       <button class="btn small ghost" onclick="toggleDownloadMenu(${i})">Herunterladen ▾</button>
       <div class="dl-menu" id="dlMenu_${i}">
+        <div onclick="downloadArchive(${i},'archiv')">Archiv</div>
         <div onclick="downloadArchive(${i},'gesamt')">Alle Routen</div>
         <div onclick="downloadArchive(${i},'neue_routen')">Neue Routen</div>
       </div>
     </div>
-    <button class="btn small primary" onclick="startArchiveCreation(${i})">Archiv erstellen</button>
   `;
+  const createBtn = (status!=="abgeschlossen" && status!=="neue_routen") ? `<button class="btn small primary" onclick="startArchiveCreation(${i})">Archiv erstellen</button>` : '';
 
   const errorLink = hasError ? `<button class="btn small danger-ghost" onclick="renderErrorLogModal(${i})">Details ansehen</button>` : '';
 
-  return `
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${statusAction}${downloadAndCreate}</div>
-    ${errorLink ? `<div style="margin-top:6px;text-align:right;">${errorLink}</div>` : ''}
-  `;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;">${downloadBtn}${statusAction}${errorLink}${createBtn}</div>`;
 }
 function toggleDownloadMenu(i){
   document.querySelectorAll('.dl-menu').forEach(m=>{ if(m.id!=='dlMenu_'+i) m.classList.remove('show'); });
@@ -482,7 +508,8 @@ document.addEventListener('click', e=>{
 });
 function downloadArchive(i, type){
   document.querySelectorAll('.dl-menu').forEach(m=>m.classList.remove('show'));
-  toast(type==='gesamt' ? 'Download „Alle Routen" gestartet (Demo)' : 'Download „Neue Routen" gestartet (Demo)');
+  const label = type==='archiv' ? 'Archiv' : type==='gesamt' ? 'Alle Routen' : 'Neue Routen';
+  toast(`Download „${label}“ gestartet (Demo)`);
 }
 function statusCell(r){
   const warn = r.hasSkippedError ? `<span class="chip warn" style="margin-left:6px;" title="Ein externer Fahrplanfehler wurde übersprungen und ist weiterhin offen">⚠ Fehler vorhanden</span>` : '';
@@ -490,59 +517,30 @@ function statusCell(r){
 }
 function renderErrorLogModal(i){
   const r=archiveRows[i];
-  const allHandled = r.errorLog.every(e=>e.resolved||e.skipped);
+  const openErrors=r.errorLog.filter(e=>!e.resolved && !e.skipped);
   openModal(`
     <h3>Error-Log</h3>
     <p class="sub">${r.datum} · ${r.typ} · ${r.parameter}</p>
-    <p class="sub" style="margin-bottom:14px;">Die Routenerkennung hat folgende Fehler gefunden:</p>
-    ${r.errorLog.map((e,j)=>`
-      <div style="border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:10px;${e.resolved?'opacity:.55;':e.skipped?'opacity:.8;':''}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-          <div>
-            <div style="font-weight:500;font-size:13px;">
-              ${e.type}
-              ${e.external?' <span class="chip neutral" style="margin-left:4px;">Extern</span>':''}
-              ${e.tabLabel?` <span class="chip info" style="margin-left:4px;" title="Wird im Tab „${e.tabLabel}“ korrigiert">Tab: ${e.tabLabel}</span>`:''}
-            </div>
-            <div class="sub" style="margin:2px 0 0;">${e.detail}</div>
-          </div>
-          <div style="white-space:nowrap;">
-            ${e.resolved ? '<span class="chip ok">Behoben</span>' :
-              e.skipped ? '<span class="chip warn">Übersprungen</span>' :
-              e.external ? `<button class="btn small ghost" onclick="skipSingleError(${i},${j})">Überspringen</button>` :
-              `<button class="btn small primary" onclick="goToErrorTab(${i},${j})">Zu ${e.tabLabel} springen</button>`}
-          </div>
+    <p class="sub" style="margin-bottom:14px;">Die Routenerkennung hat folgende offenen Fehler gefunden:</p>
+    ${openErrors.map((e,j)=>`
+      <div style="border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:10px;">
+        <div style="font-weight:500;font-size:13px;">
+          ${e.type}
+          ${e.external?' <span class="chip neutral" style="margin-left:4px;">Extern</span>':''}
         </div>
+        <div class="sub" style="margin:2px 0 0;">${e.detail}</div>
       </div>
     `).join('')}
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">Schließen</button>
-      ${allHandled ? `<button class="btn primary" onclick="finishErrorHandling(${i})">Weiter</button>` : ''}
     </div>
   `);
 }
-function goToErrorTab(i,j){
+function jumpToErrorTab(i,j){
   const e=archiveRows[i].errorLog[j];
   closeModal();
   selectTab(e.tab);
-  e.resolved=true;
-  toast(`Zu „${e.tabLabel}“ gesprungen – ${e.type} als korrigiert markiert (Demo)`);
-}
-function skipSingleError(i,j){
-  const e=archiveRows[i].errorLog[j];
-  openModal(`
-    <h3>Sind Sie sicher?</h3>
-    <p class="sub">„${e.type}" wird als externer Fahrplanfehler übersprungen. Der Fehler bleibt auch nach Archiverstellung in der Tabelle sichtbar markiert.</p>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="renderErrorLogModal(${i})">Abbrechen</button>
-      <button class="btn primary" onclick="confirmSkipSingleError(${i},${j})">Ja, überspringen</button>
-    </div>
-  `);
-}
-function confirmSkipSingleError(i,j){
-  archiveRows[i].errorLog[j].skipped=true;
-  renderErrorLogModal(i);
-  toast('Fehler übersprungen – bleibt markiert');
+  toast(`Zu „${e.tabLabel}“ gesprungen`);
 }
 function finishErrorHandling(i){
   const r=archiveRows[i];
@@ -554,7 +552,11 @@ function finishErrorHandling(i){
 }
 function goToRoutenConfig(i){
   selectTab('routen');
-  toast('Zu Routen konfigurieren gesprungen (Demo) – betroffene Route markiert');
+  if(archiveRows[i] && archiveRows[i].status==='neue_routen'){
+    archiveRows[i].status='bereit';
+  }
+  renderArchiv();
+  toast('Zu Routen konfigurieren gesprungen (Demo) – Status: Bereit zum Export');
 }
 function markRoutesConfigured(i){
   archiveRows[i].status='bereit';
@@ -694,6 +696,38 @@ function startArchive(){
   }
 }
 function startArchiveCreation(i){
+  const r=archiveRows[i];
+  if(r.status==="fehler" && r.errorLog){
+    const open=r.errorLog.filter(e=>!e.resolved && !e.skipped);
+    if(open.length===1 && open[0].type==="Missing Schedule Data"){
+      confirmCreateDespiteSchedule(i);
+      return;
+    }
+    if(open.length>0){
+      toast('Bitte zuerst die offenen Fehler im Error-Log beheben');
+      return;
+    }
+  }
+  actuallyStartArchiveCreation(i);
+}
+function confirmCreateDespiteSchedule(i){
+  openModal(`
+    <h3>Trotzdem Archiv erstellen?</h3>
+    <p class="sub">Der einzige offene Punkt ist „Missing Schedule Data" — dieser wird extern verwaltet und kann hier nicht korrigiert werden. Möchten Sie das Archiv trotzdem erstellen? Der Fahrplan-Hinweis bleibt danach weiterhin sichtbar markiert.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="confirmCreateDespiteScheduleYes(${i})">Ja, Archiv trotzdem erstellen</button>
+    </div>
+  `);
+}
+function confirmCreateDespiteScheduleYes(i){
+  const r=archiveRows[i];
+  r.hasSkippedError=true;
+  r.errorLog.forEach(e=>{ if(e.type==="Missing Schedule Data") e.skipped=true; });
+  closeModal();
+  actuallyStartArchiveCreation(i);
+}
+function actuallyStartArchiveCreation(i){
   archiveRows[i].status='archiv_wird_erstellt';
   renderArchiv();
   toast('Archiv wird erstellt (Demo)');
@@ -839,7 +873,8 @@ function renderStationen(){
       <div class="toolbar"><div class="search autocomplete">🔎 <input id="stationSearch" placeholder="Suche Station-ID oder Name…" oninput="renderStationen();showStationSuggest(this.value)" onfocus="showStationSuggest(this.value)">
         <div class="results" id="stationSuggest"></div>
       </div></div>
-      <table class="data">
+      <div style="overflow-x:auto;">
+      <table class="data" style="min-width:1180px;">
         <thead><tr>
           <th>Station-ID</th><th>Station</th><th>Ansagennr.</th><th>Ansage</th>
           <th>Text roter Innenanzeiger</th><th>Text Fahrerdisplay</th><th>Text Multifunktionsanz.</th>
@@ -851,10 +886,11 @@ function renderStationen(){
             <td>${r.id}</td><td>${r.name}</td><td>${r.ansageNum}</td><td>${r.ansage}</td>
             <td>${r.innen}</td><td>${r.fahrer}</td><td>${r.multi}</td><td>${r.tarif}</td>
             <td>${r.gps?'✔':'–'}</td><td>${r.radius}</td><td>${r.online?'✔':'–'}</td>
-            <td class="col-actions"><button class="btn small ghost" onclick="editStation(${stationenRows.indexOf(r)})">Bearbeiten</button></td>
+            <td class="col-actions"><button class="icon-btn" title="Bearbeiten" onclick="editStation(${stationenRows.indexOf(r)})">✎</button></td>
           </tr>`).join('')}
         </tbody>
       </table>
+      </div>
     </div>
   `;
 }
@@ -918,23 +954,30 @@ function renderZielcodes(){
         <div class="spacer"></div>
         <button class="btn primary" onclick="editZielcode(null)">+ Neuen Zielcode erstellen</button>
       </div>
-      <table class="data">
+      <div style="overflow-x:auto;">
+      <table class="data" style="min-width:1500px;">
         <thead><tr>
           <th>Zielcode</th><th>Linie Nr.</th><th>Linie Text</th><th>Ziel Nr.</th><th>Ziel Text</th>
-          <th>Text Multifunktionsanz.</th><th>Text Innenanzeiger</th><th>Text Führerstand</th><th class="col-actions"></th>
+          <th>Text Multifunktionsanz.</th><th>Text Innenanzeiger</th><th>Text Führerstand</th>
+          <th>Icon Front</th><th>Text Front Zeile 1</th><th>Text Front Zeile 2</th>
+          <th>Icon Seite</th><th>Text Seite Zeile 1</th><th>Text Seite Zeile 2</th>
+          <th class="col-actions"></th>
         </tr></thead>
         <tbody>
         ${rows.map(r=>`
           <tr>
             <td>${r.code}</td><td>${r.linieNum}</td><td>${r.linieText}</td><td>${r.zielNum}</td><td>${r.zielText}</td>
             <td>${r.multi}</td><td>${r.innen}</td><td>${r.fahrer}</td>
+            <td>${r.iconFront||'—'}</td><td>${r.textFrontZ1||'—'}</td><td>${r.textFrontZ2||'—'}</td>
+            <td>${r.iconSeite||'—'}</td><td>${r.textSeiteZ1||'—'}</td><td>${r.textSeiteZ2||'—'}</td>
             <td class="col-actions">
-              <button class="btn small ghost" onclick="editZielcode('${r.code}')">Bearbeiten</button>
-              <button class="btn small danger-ghost" onclick="deleteZielcode('${r.code}')">Löschen</button>
+              <button class="icon-btn" title="Bearbeiten" onclick="editZielcode('${r.code}')">✎</button>
+              <button class="icon-btn danger" title="Löschen" onclick="deleteZielcode('${r.code}')">🗑</button>
             </td>
           </tr>`).join('')}
         </tbody>
       </table>
+      </div>
       <div class="pagination">
         Zeile 1–${rows.length} von ${ZIELCODE_TOTAL.toLocaleString('de-DE')}
         <select><option>10 / Seite</option><option>25 / Seite</option><option>50 / Seite</option></select>
@@ -944,7 +987,7 @@ function renderZielcodes(){
   `;
 }
 function editZielcode(code){
-  const r = code ? zielcodeRows.find(z=>z.code===code) : {code:"",linieNum:"",linieText:"",zielNum:"",zielText:"",multi:"",innen:"",fahrer:""};
+  const r = code ? zielcodeRows.find(z=>z.code===code) : {code:"",linieNum:"",linieText:"",zielNum:"",zielText:"",multi:"",innen:"",fahrer:"",iconFront:"",textFrontZ1:"",textFrontZ2:"",iconSeite:"",textSeiteZ1:"",textSeiteZ2:""};
   openModal(`
     <h3>${code?'Zielcode bearbeiten':'Neuen Zielcode erstellen'}</h3>
     <div class="field-row"><label>Zielcode (max. 5 Ziffern)</label><input type="number" id="z_code" maxlength="5" value="${r.code}" ${code?'':''}></div>
@@ -965,11 +1008,45 @@ function editZielcode(code){
     <div class="field-row"><label>Text Multifunktionsanzeiger</label><input type="text" id="z_multi" value="${r.multi}"></div>
     <div class="field-row"><label>Text roter Innenanzeiger</label><input type="text" id="z_innen" value="${r.innen}"></div>
     <div class="field-row"><label>Text Führerstands-Display</label><input type="text" id="z_fahrer" value="${r.fahrer}"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+    <p class="sub" style="margin:0 0 12px;">Zieldisplays neue Fahrzeuge</p>
+    <div class="field-row">
+      <label>Icon Front</label>
+      <div class="autocomplete">
+        <input type="text" id="z_iconFront" value="${r.iconFront}" placeholder="Icon suchen…" oninput="showIconResults('iconFrontResults','z_iconFront',this.value)" onfocus="showIconResults('iconFrontResults','z_iconFront',this.value)">
+        <div class="results" id="iconFrontResults"></div>
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field-row"><label>Text Front Zeile 1</label><input type="text" id="z_textFrontZ1" value="${r.textFrontZ1}"></div>
+      <div class="field-row"><label>Text Front Zeile 2</label><input type="text" id="z_textFrontZ2" value="${r.textFrontZ2}"></div>
+    </div>
+    <div class="field-row">
+      <label>Icon Seite</label>
+      <div class="autocomplete">
+        <input type="text" id="z_iconSeite" value="${r.iconSeite}" placeholder="Icon suchen…" oninput="showIconResults('iconSeiteResults','z_iconSeite',this.value)" onfocus="showIconResults('iconSeiteResults','z_iconSeite',this.value)">
+        <div class="results" id="iconSeiteResults"></div>
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field-row"><label>Text Seite Zeile 1</label><input type="text" id="z_textSeiteZ1" value="${r.textSeiteZ1}"></div>
+      <div class="field-row"><label>Text Seite Zeile 2</label><input type="text" id="z_textSeiteZ2" value="${r.textSeiteZ2}"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
       <button class="btn primary" onclick="saveZielcode('${code||""}')">Speichern</button>
     </div>
   `);
+}
+function showIconResults(resultsId, inputId, q){
+  const box=document.getElementById(resultsId);
+  const matches=ICON_OPTIONS.filter(n=>n.toLowerCase().includes((q||'').toLowerCase()));
+  box.innerHTML=matches.map(n=>`<div onclick="pickIcon('${resultsId}','${inputId}','${n}')">${n}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer</div>`;
+  box.classList.add('show');
+}
+function pickIcon(resultsId, inputId, name){
+  document.getElementById(inputId).value=name;
+  document.getElementById(resultsId).classList.remove('show');
 }
 function showLineResults(q){
   const box=document.getElementById('lineResults');
@@ -989,6 +1066,12 @@ function saveZielcode(code){
     multi: document.getElementById('z_multi').value,
     innen: document.getElementById('z_innen').value,
     fahrer: document.getElementById('z_fahrer').value,
+    iconFront: document.getElementById('z_iconFront').value,
+    textFrontZ1: document.getElementById('z_textFrontZ1').value,
+    textFrontZ2: document.getElementById('z_textFrontZ2').value,
+    iconSeite: document.getElementById('z_iconSeite').value,
+    textSeiteZ1: document.getElementById('z_textSeiteZ1').value,
+    textSeiteZ2: document.getElementById('z_textSeiteZ2').value,
   };
   if(code){
     const idx=zielcodeRows.findIndex(z=>z.code===code);
@@ -1021,7 +1104,7 @@ function renderLongTable(viewId, rowsRef, total, tableLabel, sortStateKey){
         <thead><tr><th class="sortable">Nummer</th><th class="sortable">Text</th><th class="col-actions"></th></tr></thead>
         <tbody>
           ${rows.map(r=>`<tr><td>${r.nummer}</td><td>${r.text || '<span style="color:#b0b8c1">— leer —</span>'}</td>
-            <td class="col-actions"><button class="btn small ghost" onclick="editLongRow('${viewId}','${r.nummer}')">Bearbeiten</button></td></tr>`).join('')}
+            <td class="col-actions"><button class="icon-btn" title="Bearbeiten" onclick="editLongRow('${viewId}','${r.nummer}')">✎</button></td></tr>`).join('')}
         </tbody>
       </table>
       <div class="pagination">Zeile 1–${rows.length} von ${total.toLocaleString('de-DE')}
@@ -1065,32 +1148,116 @@ function renderAnsagen(){
   const el=document.getElementById('view-ansagen');
   el.innerHTML=`
     <div class="panel">
-      <div class="note-banner">Konzept noch nicht final abgestimmt: Ansagenkonfiguration &amp; Audioarchiv-Erstellung sind vom IBIS-Export getrennt. IBIS hat Priorität, dieser Bereich zeigt einen ersten Entwurf.</div>
-      <h2>Playlist – Ansagen &amp; Funktionsansagen</h2>
-      <p class="sub">Reihenfolge der Audiofragmente je Ansagenummer. Nummern ab 110.001 sind Funktionsansagen mit fixer Nummer.</p>
+      <h2>1. Audiofragmente hochladen</h2>
+      <p class="sub">Erst hochladen, danach zu einer Ansage oder Funktionsansage zusammenstellen.</p>
       <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openAudioUploadDialog()">⬆ Audio hochladen</button></div>
       <table class="data">
-        <thead><tr><th>Nummer</th><th>Fragment</th><th>Dateiname</th><th>Beschreibung</th><th class="col-actions"></th></tr></thead>
+        <thead><tr><th>Fragmentnummer</th><th>Dateiname</th><th>Beschreibung</th><th>Hochgeladen</th><th class="col-actions"></th></tr></thead>
         <tbody>
-          ${playlistRows.map((p,i)=>`
-            <tr><td>${p.nummer}</td><td>${p.fragment}</td><td>${p.filename}</td><td>${p.beschreibung||'—'}</td>
+          ${audioFragmentsRows.map((a,i)=>`
+            <tr><td>${a.fragmentNummer}</td><td>${a.filename}</td><td>${a.beschreibung||'—'}</td><td>${a.uploaded}</td>
               <td class="col-actions">
                 <button class="icon-btn" title="Abspielen" onclick="toast('Wiedergabe (Demo)')">▶</button>
-                <button class="icon-btn" title="Bearbeiten" onclick="toast('Fragment bearbeiten (Demo)')">✎</button>
-                <button class="icon-btn danger" title="Löschen" onclick="deletePlaylistRow(${i})">🗑</button>
+                <button class="icon-btn" title="Bearbeiten" onclick="editAudioFragment(${i})">✎</button>
+                <button class="icon-btn danger" title="Löschen" onclick="deleteAudioFragment(${i})">🗑</button>
               </td></tr>`).join('')}
         </tbody>
       </table>
     </div>
+
+    <div class="panel">
+      <h2>2. Playlist – Ansagen, Funktionsansagen &amp; Notfall</h2>
+      <p class="sub">Kombiniert hochgeladene Audiofragmente zu einer Ansage (sbr.announcements), Funktionsansage oder Notfallansage (beide sbr.announcement_list, feste Nummer). Reihenfolge je Nummer wird über sbr.playlist definiert.</p>
+      <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openPlaylistComposeDialog()">+ Zu Playlist hinzufügen</button></div>
+      ${groupedPlaylist().length===0 ? `<div class="empty-state">Noch keine Playlist-Einträge.</div>` : `
+      <div class="playlist-groups">
+        ${groupedPlaylist().map(g=>{
+          const key=g.nummer+'|'+g.typ;
+          const open=playlistGroupsExpanded.has(key);
+          const typChip = g.typ==='Notfall' ? 'err' : g.typ==='Funktionsansage' ? 'info' : 'neutral';
+          return `
+          <div class="playlist-group">
+            <div class="playlist-group-header" onclick="togglePlaylistGroup('${key.replace(/'/g,"\\'")}')" style="cursor:pointer;">
+              <span class="errorlog-caret" style="color:#8a94a3;font-size:11px;">${open?'▲':'▼'}</span>
+              <span class="playlist-group-nummer">${g.nummer}</span>
+              <span class="chip ${typChip}">${g.typ}</span>
+              ${g.titel ? `<span class="playlist-group-titel" title="Titel / Hinweis">${g.titel}</span>` : ''}
+              <span class="playlist-group-desc" title="Zusammengesetzt aus: ${g.items.map(it=>it.beschreibung||it.filename).join(', ')}">${g.combinedBeschreibung}</span>
+              <span class="spacer"></span>
+              <button class="icon-btn" title="Abspielen" onclick="event.stopPropagation();toast('Wiedergabe (Demo)')">▶</button>
+              <button class="icon-btn" title="Ganze Kombination bearbeiten" onclick="event.stopPropagation();editPlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">✎</button>
+              <button class="icon-btn danger" title="Ganze Kombination löschen" onclick="event.stopPropagation();deletePlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">🗑</button>
+            </div>
+            ${open?`
+            <table class="data playlist-group-table">
+              <thead><tr><th style="width:70px;">Position</th><th>Dateiname</th><th>Beschreibung</th><th class="col-actions"></th></tr></thead>
+              <tbody>
+                ${g.items.map(it=>`
+                  <tr>
+                    <td>${it.fragment}</td><td>${it.filename}</td><td>${it.beschreibung||'—'}</td>
+                    <td class="col-actions"><button class="icon-btn danger" title="Fragment aus Kombination entfernen" onclick="removeFragmentFromCombo(${it.idx})">🗑</button></td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+            `:''}
+          </div>
+        `;}).join('')}
+      </div>
+      `}
+    </div>
   `;
+}
+let playlistGroupsExpanded = new Set(playlistRows.map(p=>p.nummer+'|'+p.typ));
+function togglePlaylistGroup(key){
+  if(playlistGroupsExpanded.has(key)) playlistGroupsExpanded.delete(key); else playlistGroupsExpanded.add(key);
+  renderAnsagen();
+}
+function groupedPlaylist(){
+  const groups={};
+  playlistRows.forEach((p,idx)=>{
+    const key=p.nummer+'|'+p.typ;
+    if(!groups[key]) groups[key]={nummer:p.nummer, typ:p.typ, titel:p.titel||'', items:[]};
+    groups[key].items.push({...p, idx});
+  });
+  return Object.values(groups).map(g=>{
+    g.items.sort((a,b)=>a.fragment-b.fragment);
+    g.combinedBeschreibung = g.items.map(it=>it.beschreibung||it.filename).join(' → ');
+    return g;
+  });
+}
+function deletePlaylistCombo(nummer, typ){
+  playlistRows = playlistRows.filter(p=>!(p.nummer===nummer && p.typ===typ));
+  renderAnsagen();
+  toast('Kombination gelöscht');
+}
+function removeFragmentFromCombo(idx){
+  const removed=playlistRows[idx];
+  playlistRows.splice(idx,1);
+  playlistRows.filter(p=>p.nummer===removed.nummer && p.typ===removed.typ)
+    .sort((a,b)=>a.fragment-b.fragment)
+    .forEach((p,i)=>{ p.fragment=i+1; });
+  renderAnsagen();
+  toast('Fragment aus Kombination entfernt');
 }
 function openAudioUploadDialog(){
   openModal(`
     <h3>Audio hochladen</h3>
-    <p class="sub">Neue Audiodatei hochladen oder eine bestehende Datei ersetzen.</p>
+    <p class="sub">Erster Schritt: Audiodatei hochladen. Die Zuordnung zu einer Ansagenummer erfolgt danach in der Playlist.</p>
     <div class="field-row"><label>Datei</label><input type="file" id="audioFile" accept="audio/*"></div>
-    <div class="field-row"><label>Ansagenummer</label><input type="text" id="audioNummer" placeholder="z. B. 9.941"></div>
-    <div class="field-row"><label>Fragment</label><input type="number" id="audioFragment" min="1" placeholder="z. B. 1"></div>
+    <div class="field-row">
+      <label>Dateiname-Modus</label>
+      <select id="audioMode" onchange="toggleAudioModeFields()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;">
+        <option value="new">Neuer eindeutiger Dateiname</option>
+        <option value="existing">Bestehenden Dateinamen ersetzen</option>
+      </select>
+    </div>
+    <div class="field-row" id="existingFilenameRow" style="display:none;">
+      <label>Bestehende Datei</label>
+      <select id="audioExistingFile" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;">
+        ${audioFragmentsRows.map(a=>`<option value="${a.filename}">${a.filename}</option>`).join('')}
+      </select>
+      <div class="hint">Hinweis: Ob das Ersetzen automatisch ein neues Audioarchiv auslöst, ist noch nicht entschieden (Demo ohne Auswirkung).</div>
+    </div>
     <div class="field-row"><label>Beschreibung</label><input type="text" id="audioBeschreibung" placeholder="z. B. Türfreigabe-Ansage"></div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
@@ -1098,18 +1265,164 @@ function openAudioUploadDialog(){
     </div>
   `);
 }
+function toggleAudioModeFields(){
+  const mode=document.getElementById('audioMode').value;
+  document.getElementById('existingFilenameRow').style.display = mode==='existing' ? 'block' : 'none';
+}
 function confirmAudioUpload(){
   const fileInput=document.getElementById('audioFile');
-  const nummer=document.getElementById('audioNummer').value || '9.999';
-  const fragment=parseInt(document.getElementById('audioFragment').value) || (playlistRows.length+1);
+  const mode=document.getElementById('audioMode').value;
   const beschreibung=document.getElementById('audioBeschreibung').value || '';
-  const filename = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'neue_datei.mp3';
-  playlistRows.push({nummer, fragment, filename, beschreibung});
+  const now=new Date().toLocaleDateString('de-DE');
+  if(mode==='existing'){
+    const filename=document.getElementById('audioExistingFile').value;
+    const idx=audioFragmentsRows.findIndex(a=>a.filename===filename);
+    if(idx>-1){ audioFragmentsRows[idx]={fragmentNummer: audioFragmentsRows[idx].fragmentNummer, filename, beschreibung: beschreibung||audioFragmentsRows[idx].beschreibung, uploaded:now}; }
+    closeModal(); renderAnsagen();
+    toast('Bestehende Datei ersetzt (Demo): '+filename);
+  } else {
+    const filename = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'neue_datei_'+(audioFragmentsRows.length+1)+'.mp3';
+    const fragmentNummer = nextFragmentNummer();
+    audioFragmentsRows.unshift({fragmentNummer, filename, beschreibung, uploaded:now});
+    closeModal(); renderAnsagen();
+    toast('Audio hochgeladen (Demo): '+filename);
+  }
+}
+function nextFragmentNummer(){
+  const nums=audioFragmentsRows.map(a=>parseInt(a.fragmentNummer)||0);
+  return String((nums.length?Math.max(...nums):0)+1);
+}
+function deleteAudioFragment(i){ audioFragmentsRows.splice(i,1); renderAnsagen(); toast('Audiofragment gelöscht'); }
+function editAudioFragment(i){
+  const a=audioFragmentsRows[i];
+  openModal(`
+    <h3>Audiofragment bearbeiten</h3>
+    <div class="field-row"><label>Fragmentnummer</label><input type="text" id="ea_fragmentNummer" value="${a.fragmentNummer}"></div>
+    <div class="field-row"><label>Dateiname</label><input type="text" id="ea_filename" value="${a.filename}"></div>
+    <div class="field-row">
+      <label>Neue MP3 hochladen (ersetzt aktuelle Datei)</label>
+      <input type="file" id="ea_file" accept="audio/*" onchange="if(this.files[0]) document.getElementById('ea_filename').value=this.files[0].name">
+      <div class="hint">Optional — leer lassen, um die bestehende Datei zu behalten.</div>
+    </div>
+    <div class="field-row"><label>Beschreibung</label><input type="text" id="ea_beschreibung" value="${a.beschreibung||''}"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="saveAudioFragment(${i})">Speichern</button>
+    </div>
+  `);
+}
+function saveAudioFragment(i){
+  const oldFilename=audioFragmentsRows[i].filename;
+  const fileInput=document.getElementById('ea_file');
+  const uploadedName = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : null;
+  const newFilename=uploadedName || document.getElementById('ea_filename').value;
+  audioFragmentsRows[i].fragmentNummer=document.getElementById('ea_fragmentNummer').value;
+  audioFragmentsRows[i].filename=newFilename;
+  audioFragmentsRows[i].beschreibung=document.getElementById('ea_beschreibung').value;
+  if(uploadedName) audioFragmentsRows[i].uploaded=new Date().toLocaleDateString('de-DE');
+  playlistRows.forEach(p=>{ if(p.filename===oldFilename) p.filename=newFilename; });
   closeModal();
   renderAnsagen();
-  toast('Audio hochgeladen (Demo): '+filename);
+  toast(uploadedName ? 'Neue MP3 hochgeladen und gespeichert (Demo): '+newFilename : 'Audiofragment gespeichert');
+}
+let composeFragments = [];
+let composeEditKey = null;
+let composeTitel = '';
+function openPlaylistComposeDialog(){
+  composeFragments = [{filename:'', beschreibung:''}];
+  composeEditKey = null;
+  composeTitel = '';
+  renderComposeDialog();
+}
+function renderComposeDialog(){
+  openModal(`
+    <h3>${composeEditKey ? 'Kombination bearbeiten' : 'Zu Playlist hinzufügen'}</h3>
+    <p class="sub">Mehrere Audiofragmente zu einer Kombination (Ansage oder Funktionsansage) zusammenstellen. Reihenfolge = Fragment-Position.</p>
+    <div class="field-row">
+      <label>Typ</label>
+      <select id="pl_typ" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;font-family:inherit;">
+        <option value="Ansage">Ansage (sbr.announcements)</option>
+        <option value="Funktionsansage">Funktionsansage (sbr.announcement_list — feste Nummer)</option>
+        <option value="Notfall">Notfall (sbr.announcement_list — Notfallansage, feste Nummer)</option>
+      </select>
+    </div>
+    <div class="field-row"><label>Nummer</label><input type="text" id="pl_nummer" placeholder="z. B. 9.941 oder 110.001"></div>
+    <div class="field-row"><label>Titel (Hinweis)</label><input type="text" id="pl_titel" value="${composeTitel||''}" placeholder="z. B. Türfreigabe Dunantstraße"></div>
+    <p class="sub" style="margin:14px 0 8px;">Fragmente in Reihenfolge</p>
+    ${composeFragments.map((f,idx)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="width:20px;color:#8a94a3;font-size:12px;">${idx+1}.</span>
+        <div class="autocomplete" style="flex:1;">
+          <input type="text" id="pl_frag_${idx}" value="${f.filename}" placeholder="Audiofragment suchen…" oninput="showFragmentResults(${idx}, this.value)" onfocus="showFragmentResults(${idx}, this.value)">
+          <div class="results" id="fragmentResults_${idx}"></div>
+        </div>
+        ${composeFragments.length>1?`<button class="icon-btn danger" title="Entfernen" onclick="removeComposeFragment(${idx})">🗑</button>`:''}
+      </div>
+    `).join('')}
+    <button class="btn ghost small" onclick="addComposeFragment()">+ Weiteres Fragment</button>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="confirmPlaylistCompose()">${composeEditKey ? 'Speichern' : 'Kombination hinzufügen'}</button>
+    </div>
+  `);
+}
+function addComposeFragment(){
+  const typ=document.getElementById('pl_typ')?.value;
+  const nummer=document.getElementById('pl_nummer')?.value;
+  composeFragments.push({filename:'', beschreibung:''});
+  renderComposeDialog();
+  if(typ) document.getElementById('pl_typ').value=typ;
+  if(nummer) document.getElementById('pl_nummer').value=nummer;
+}
+function removeComposeFragment(idx){
+  const typ=document.getElementById('pl_typ')?.value;
+  const nummer=document.getElementById('pl_nummer')?.value;
+  composeFragments.splice(idx,1);
+  renderComposeDialog();
+  if(typ) document.getElementById('pl_typ').value=typ;
+  if(nummer) document.getElementById('pl_nummer').value=nummer;
+}
+function showFragmentResults(idx, q){
+  const box=document.getElementById('fragmentResults_'+idx);
+  const matches=audioFragmentsRows.filter(a=>a.filename.toLowerCase().includes((q||'').toLowerCase())||(a.beschreibung||'').toLowerCase().includes((q||'').toLowerCase()));
+  box.innerHTML=matches.map(a=>`<div onclick="pickFragment(${idx},'${a.filename.replace(/'/g,"\\'")}')"><b>${a.filename}</b> — ${a.beschreibung||''}</div>`).join('') || `<div style="color:#9aa4b0">Keine Treffer — bitte zuerst hochladen</div>`;
+  box.classList.add('show');
+}
+function pickFragment(idx, filename){
+  composeFragments[idx].filename=filename;
+  document.getElementById('pl_frag_'+idx).value=filename;
+  document.getElementById('fragmentResults_'+idx).classList.remove('show');
+}
+function confirmPlaylistCompose(){
+  const typ=document.getElementById('pl_typ').value;
+  const nummer=document.getElementById('pl_nummer').value;
+  const titel=document.getElementById('pl_titel').value;
+  const filenames=composeFragments.map((f,idx)=>document.getElementById('pl_frag_'+idx).value).filter(v=>v);
+  if(!nummer||filenames.length===0){ toast('Bitte Nummer und mindestens ein Audiofragment angeben'); return; }
+  if(composeEditKey){
+    const [oldNummer, oldTyp]=composeEditKey.split('|');
+    playlistRows = playlistRows.filter(p=>!(p.nummer===oldNummer && p.typ===oldTyp));
+  }
+  filenames.forEach((filename,idx)=>{
+    const frag=audioFragmentsRows.find(a=>a.filename===filename);
+    playlistRows.push({nummer, typ, fragment: idx+1, filename, beschreibung: frag?frag.beschreibung:'', titel});
+  });
+  playlistGroupsExpanded.add(nummer+'|'+typ);
+  closeModal();
+  renderAnsagen();
+  toast(composeEditKey ? 'Kombination gespeichert' : `Kombination mit ${filenames.length} Fragment(en) zur Playlist hinzugefügt (Demo)`);
+  composeEditKey = null;
 }
 function deletePlaylistRow(i){ playlistRows.splice(i,1); renderAnsagen(); toast('Fragment gelöscht'); }
+function editPlaylistCombo(nummer, typ){
+  const items=playlistRows.filter(p=>p.nummer===nummer && p.typ===typ).sort((a,b)=>a.fragment-b.fragment);
+  composeFragments = items.map(it=>({filename:it.filename, beschreibung:it.beschreibung}));
+  composeEditKey = nummer+'|'+typ;
+  composeTitel = items[0] ? (items[0].titel||'') : '';
+  renderComposeDialog();
+  document.getElementById('pl_typ').value=typ;
+  document.getElementById('pl_nummer').value=nummer;
+}
 renderAnsagen();
 
 /* ============================= TAB 8: ZIELCODES DISPO ============================= */
@@ -1135,8 +1448,8 @@ function renderDispo(){
           <tr>
             <td>${r.gattung}</td><td>${r.linie}</td><td>${r.ziel}</td><td>${r.code}</td>
             <td class="col-actions">
-              <button class="btn small ghost" onclick="editDispo(${dispoRows.indexOf(r)})">Bearbeiten</button>
-              <button class="btn small danger-ghost" onclick="deleteDispo(${dispoRows.indexOf(r)})">Löschen</button>
+              <button class="icon-btn" title="Bearbeiten" onclick="editDispo(${dispoRows.indexOf(r)})">✎</button>
+              <button class="icon-btn danger" title="Löschen" onclick="deleteDispo(${dispoRows.indexOf(r)})">🗑</button>
             </td>
           </tr>`).join('')}
         </tbody>
@@ -1205,7 +1518,7 @@ function renderParameter(){
             <td>${r.editable ? `<input type="text" value="${r.wert}" style="width:90px" onchange="updateParam('${r.name}', this.value)">` : r.wert}</td>
             <td>${r.editable?'<span class="chip ok">Ja</span>':'<span class="chip neutral">Nein</span>'}</td>
             <td>${r.release}</td>
-            <td class="col-actions">${r.editable?`<button class="btn small ghost" onclick="toast('Parameter gespeichert')">Speichern</button>`:''}</td>
+            <td class="col-actions">${r.editable?`<button class="icon-btn" title="Speichern" onclick="toast('Parameter gespeichert')">💾</button>`:''}</td>
           </tr>`).join('')}
         </tbody>
       </table>
