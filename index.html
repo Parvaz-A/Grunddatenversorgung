@@ -107,10 +107,18 @@
 
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
   .toolbar .search{
-    display:flex;align-items:center;gap:6px;
-    border:1px solid var(--border);border-radius:20px;padding:6px 12px;background:#fbfbfc;min-width:220px;
+    display:flex;align-items:center;gap:6px;position:relative;
+    background:rgba(0,0,0,.06);border-radius:4px 4px 0 0;
+    border-bottom:1px solid rgba(0,0,0,.42);
+    padding:12px 40px 12px 12px;min-width:220px;
   }
-  .toolbar .search input{border:none;outline:none;background:none;font-size:13px;flex:1;font-family:inherit;}
+  .toolbar .search:focus-within{border-bottom:2px solid var(--primary);padding-bottom:11px;}
+  .toolbar .search input{border:none;outline:none;background:none;font-size:15px;flex:1;font-family:'Roboto',inherit;color:rgba(0,0,0,.87);}
+  .toolbar .search input::placeholder{color:rgba(0,0,0,.6);}
+  .toolbar .search::after{
+    content:"🔎";position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    font-size:15px;pointer-events:none;opacity:.7;
+  }
   .spacer{flex:1;}
 
   button.btn{
@@ -768,7 +776,7 @@ function renderRouten(){
       <h2>Routen</h2>
       <p class="sub">Nicht editierbar. Jede Spalte ist einzeln sortierbar. Auswahl öffnet die Routenkonfiguration daneben.</p>
       <div class="toolbar">
-        <div class="search autocomplete">🔎 <input placeholder="Suche…" id="routeSearch" oninput="renderRouten();showRouteSuggest(this.value)" onfocus="showRouteSuggest(this.value)">
+        <div class="search autocomplete"><input placeholder="Suche…" id="routeSearch" oninput="renderRouten();showRouteSuggest(this.value)" onfocus="showRouteSuggest(this.value)">
           <div class="results" id="routeSuggest"></div>
         </div>
       </div>
@@ -890,7 +898,7 @@ function renderStationen(){
     <div class="panel">
       <h2>Stationen</h2>
       <p class="sub">Liste wird durch den IBIS-Export synchron zur bhf-Tabelle gehalten. Kein manuelles Hinzufügen oder Löschen möglich.</p>
-      <div class="toolbar"><div class="search autocomplete">🔎 <input id="stationSearch" placeholder="Suche Station-ID oder Name…" oninput="renderStationen();showStationSuggest(this.value)" onfocus="showStationSuggest(this.value)">
+      <div class="toolbar"><div class="search autocomplete"><input id="stationSearch" placeholder="Suche Station-ID oder Name…" oninput="renderStationen();showStationSuggest(this.value)" onfocus="showStationSuggest(this.value)">
         <div class="results" id="stationSuggest"></div>
       </div></div>
       <div style="overflow-x:auto;">
@@ -968,7 +976,7 @@ function renderZielcodes(){
       <h2>Zielcodes</h2>
       <p class="sub">Ca. ${ZIELCODE_TOTAL.toLocaleString('de-DE')} Zielcodes insgesamt (Demo zeigt Ausschnitt).</p>
       <div class="toolbar">
-        <div class="search autocomplete">🔎 <input id="zcSearch" placeholder="Suche Zielcode, Linie, Ziel…" oninput="renderZielcodes();showZcSuggest(this.value)" onfocus="showZcSuggest(this.value)">
+        <div class="search autocomplete"><input id="zcSearch" placeholder="Suche Zielcode, Linie, Ziel…" oninput="renderZielcodes();showZcSuggest(this.value)" onfocus="showZcSuggest(this.value)">
           <div class="results" id="zcSuggest"></div>
         </div>
         <div class="spacer"></div>
@@ -1117,7 +1125,7 @@ function renderLongTable(viewId, rowsRef, total, tableLabel, sortStateKey){
     <div class="panel">
       <h2>${tableLabel}</h2>
       <p class="sub">Feste Tabellengröße von ${total.toLocaleString('de-DE')} Zeilen. Kein manuelles Hinzufügen oder Löschen — nur der Text kann bearbeitet werden.</p>
-      <div class="toolbar"><div class="search autocomplete">🔎 <input id="${viewId}_search" placeholder="Suche Nummer oder Text…" oninput="searchLongTable('${viewId}');showLongSuggest('${viewId}', this.value)" onfocus="showLongSuggest('${viewId}', this.value)">
+      <div class="toolbar"><div class="search autocomplete"><input id="${viewId}_search" placeholder="Suche Nummer oder Text…" oninput="searchLongTable('${viewId}');showLongSuggest('${viewId}', this.value)" onfocus="showLongSuggest('${viewId}', this.value)">
         <div class="results" id="${viewId}_suggest"></div>
       </div></div>
       <table class="data">
@@ -1166,15 +1174,24 @@ renderLinientexte();
 /* ============================= TAB: AUDIODATEIEN ============================= */
 function renderAudiodateien(){
   const el=document.getElementById('view-audiodateien');
+  const q=(document.getElementById('audioSearch')?.value||'').toLowerCase();
+  const rows=audioFragmentsRows
+    .map((a,i)=>({a,i}))
+    .filter(({a})=> a.filename.toLowerCase().includes(q) || (a.beschreibung||'').toLowerCase().includes(q) || (a.fragmentNummer||'').toLowerCase().includes(q));
   el.innerHTML=`
     <div class="panel">
       <h2>Audiodateien</h2>
       <p class="sub">Erster Schritt: Audiodatei hochladen. Die Zuordnung zu einer Ansagenummer erfolgt danach in "Playlist bearbeiten".</p>
-      <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openAudioUploadDialog()">⬆ Audio hochladen</button></div>
+      <div class="toolbar">
+        <div class="search"><input id="audioSearch" placeholder="Dateiname, Beschreibung oder Fragmentnummer suchen…" oninput="renderAudiodateien()"></div>
+        <div class="spacer"></div>
+        <button class="btn primary" onclick="openAudioUploadDialog()">⬆ Audio hochladen</button>
+      </div>
       <table class="data">
         <thead><tr><th>Dateiname</th><th>Beschreibung</th><th>Größe</th><th>Hochgeladen</th><th class="col-actions"></th></tr></thead>
         <tbody>
-          ${audioFragmentsRows.map((a,i)=>`
+          ${rows.length===0 ? `<tr><td colspan="5" style="color:#8a94a3;text-align:center;padding:20px;">Keine Audiodateien gefunden.</td></tr>` :
+          rows.map(({a,i})=>`
             <tr><td>${a.filename}</td><td>${a.beschreibung||'—'}</td><td>${a.groesse||'—'}</td><td>${a.uploaded}</td>
               <td class="col-actions">
                 <button class="icon-btn" title="Abspielen" onclick="toast('Wiedergabe (Demo)')">▶</button>
@@ -1202,7 +1219,7 @@ function renderPlaylist(){
       <h2>Playlist bearbeiten</h2>
       <p class="sub">Ansagenummer (sbr.announcements) oder Funktionsansage/Notfall (sbr.announcement_list, feste Nummer) — Reihenfolge der Fragmente je Nummer über sbr.playlist. Jedes Fragment zeigt seine eindeutige Fragmentnummer (#) aus den Audiodateien.</p>
       <div class="toolbar">
-        <div class="search">🔎 <input id="playlistSearch" placeholder="Ansagenummer, Beschreibung oder Dateiname suchen…" oninput="renderPlaylist()"></div>
+        <div class="search"><input id="playlistSearch" placeholder="Ansagenummer, Beschreibung oder Dateiname suchen…" oninput="renderPlaylist()"></div>
         <div class="spacer"></div>
         <button class="btn primary" onclick="openPlaylistComposeDialog()">+ Zu Playlist hinzufügen</button>
       </div>
@@ -1488,7 +1505,7 @@ function renderDispo(){
       <h2>Zielcodes für Dispositionsmaßnahmen</h2>
       <p class="sub">Wird von vehicle_interface genutzt, wenn sich der ursprüngliche Zielcode durch eine dispositive Änderung ändert. Ca. 30.000 Zeilen, alle Spalten editierbar.</p>
       <div class="toolbar">
-        <div class="search autocomplete">🔎 <input id="dispoSearch" placeholder="Suche Linie, Ziel, Code…" oninput="renderDispo();showDispoSuggest(this.value)" onfocus="showDispoSuggest(this.value)">
+        <div class="search autocomplete"><input id="dispoSearch" placeholder="Suche Linie, Ziel, Code…" oninput="renderDispo();showDispoSuggest(this.value)" onfocus="showDispoSuggest(this.value)">
           <div class="results" id="dispoSuggest"></div>
         </div>
         <div class="spacer"></div>
@@ -1559,7 +1576,7 @@ function renderParameter(){
     <div class="panel">
       <h2>Parameterarchiv</h2>
       <p class="sub">Konfiguration der INIT-Fahrzeugsoftware-Parameter. Jedes neue Software-Release kann neue Parameter oder Werte mitbringen; nicht alle sind durch AVG editierbar.</p>
-      <div class="toolbar"><div class="search autocomplete">🔎 <input id="paramSearch" placeholder="Parameter suchen…" oninput="renderParameter();showParamSuggest(this.value)" onfocus="showParamSuggest(this.value)">
+      <div class="toolbar"><div class="search autocomplete"><input id="paramSearch" placeholder="Parameter suchen…" oninput="renderParameter();showParamSuggest(this.value)" onfocus="showParamSuggest(this.value)">
         <div class="results" id="paramSuggest"></div>
       </div></div>
       <table class="data">
