@@ -1190,13 +1190,23 @@ function renderAudiodateien(){
 /* ============================= TAB: PLAYLIST BEARBEITEN ============================= */
 function renderPlaylist(){
   const el=document.getElementById('view-playlist');
-  const groups=groupedPlaylist();
+  const q=(document.getElementById('playlistSearch')?.value||'').toLowerCase();
+  const groups=groupedPlaylist().filter(g=>
+    g.nummer.toLowerCase().includes(q) ||
+    (g.titel||'').toLowerCase().includes(q) ||
+    (g.combinedBeschreibung||'').toLowerCase().includes(q) ||
+    g.items.some(it=>it.filename.toLowerCase().includes(q))
+  );
   el.innerHTML=`
     <div class="panel">
       <h2>Playlist bearbeiten</h2>
-      <p class="sub">Ansagenummer (sbr.announcements) oder Funktionsansage/Notfall (sbr.announcement_list, feste Nummer) — Reihenfolge der Fragmente je Nummer über sbr.playlist.</p>
-      <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openPlaylistComposeDialog()">+ Zu Playlist hinzufügen</button></div>
-      ${groups.length===0 ? `<div class="empty-state">Noch keine Playlist-Einträge.</div>` : `
+      <p class="sub">Ansagenummer (sbr.announcements) oder Funktionsansage/Notfall (sbr.announcement_list, feste Nummer) — Reihenfolge der Fragmente je Nummer über sbr.playlist. Jedes Fragment zeigt seine eindeutige Fragmentnummer (#) aus den Audiodateien.</p>
+      <div class="toolbar">
+        <div class="search">🔎 <input id="playlistSearch" placeholder="Ansagenummer, Beschreibung oder Dateiname suchen…" oninput="renderPlaylist()"></div>
+        <div class="spacer"></div>
+        <button class="btn primary" onclick="openPlaylistComposeDialog()">+ Zu Playlist hinzufügen</button>
+      </div>
+      ${groups.length===0 ? `<div class="empty-state">Keine Playlist-Einträge gefunden.</div>` : `
       <div style="overflow-x:auto;">
       <table class="data" style="min-width:900px;">
         <thead><tr>
@@ -1211,18 +1221,20 @@ function renderPlaylist(){
                 <td>${g.titel||g.combinedBeschreibung||'—'}</td>
                 <td>
                   <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                    ${g.items.map(it=>`
-                      <span class="chip neutral" style="display:inline-flex;align-items:center;gap:6px;">
-                        ${it.fragment} · ${it.filename}
+                    ${g.items.map(it=>{
+                      const lib=audioFragmentsRows.find(a=>a.filename===it.filename);
+                      const libNum = lib ? lib.fragmentNummer : '?';
+                      return `
+                      <span class="chip neutral" style="display:inline-flex;align-items:center;gap:6px;" title="Position ${it.fragment} · Fragmentnummer ${libNum}">
+                        ${libNum} · ${it.filename}
                         <button class="chip-x" title="Fragment entfernen" onclick="removeFragmentFromCombo(${it.idx})">×</button>
                       </span>
-                    `).join('')}
+                    `;}).join('')}
                   </div>
                 </td>
                 <td style="text-align:center;"><input type="checkbox" disabled ${checked?'checked':''}></td>
                 <td class="col-actions">
                   <button class="icon-btn" title="Bearbeiten" onclick="editPlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">✎</button>
-                  <button class="icon-btn danger" title="Ganze Kombination löschen" onclick="deletePlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">🗑</button>
                 </td>
               </tr>
             `;
@@ -1350,11 +1362,14 @@ function editAudioFragment(i){
   `);
 }
 function saveAudioFragment(i){
+  const newNummer=document.getElementById('ea_fragmentNummer').value;
+  const duplicate=audioFragmentsRows.some((a,j)=>j!==i && a.fragmentNummer===newNummer);
+  if(duplicate){ toast('Diese Fragmentnummer wird bereits verwendet — bitte eine andere wählen'); return; }
   const oldFilename=audioFragmentsRows[i].filename;
   const fileInput=document.getElementById('ea_file');
   const uploadedName = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : null;
   const newFilename=uploadedName || document.getElementById('ea_filename').value;
-  audioFragmentsRows[i].fragmentNummer=document.getElementById('ea_fragmentNummer').value;
+  audioFragmentsRows[i].fragmentNummer=newNummer;
   audioFragmentsRows[i].filename=newFilename;
   audioFragmentsRows[i].groesse=document.getElementById('ea_groesse').value;
   audioFragmentsRows[i].beschreibung=document.getElementById('ea_beschreibung').value;
