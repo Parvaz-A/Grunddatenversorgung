@@ -48,6 +48,7 @@
 
   nav.tabs{
     display:flex;
+    flex-wrap:nowrap;
     background:var(--panel);
     border-bottom:1px solid var(--border);
     overflow-x:auto;
@@ -55,13 +56,14 @@
   }
   nav.tabs button{
     appearance:none;border:none;background:none;
-    padding:13px 18px;
-    font-size:13px;
+    padding:12px 10px;
+    font-size:11.5px;
     font-family:inherit;
     color:var(--text-muted);
     cursor:pointer;
     border-bottom:3px solid transparent;
     white-space:nowrap;
+    flex-shrink:0;
   }
   nav.tabs button:hover{color:var(--primary);background:var(--primary-light);}
   nav.tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
@@ -146,6 +148,11 @@
   .col-actions{white-space:nowrap;text-align:right;}
 
   .chip{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11.5px;font-weight:500;}
+  .chip-x{
+    appearance:none;border:none;background:rgba(0,0,0,.08);color:inherit;border-radius:50%;
+    width:16px;height:16px;line-height:16px;text-align:center;font-size:12px;cursor:pointer;padding:0;
+  }
+  .chip-x:hover{background:var(--err);color:#fff;}
   .chip.ok{background:var(--ok-bg);color:var(--ok);}
   .chip.warn{background:var(--warn-bg);color:var(--warn);}
   .chip.err{background:var(--err-bg);color:var(--err);}
@@ -208,6 +215,14 @@
 
   .badge-tab-count{background:#eceff1;color:var(--text-muted);border-radius:10px;padding:1px 7px;font-size:10.5px;margin-left:6px;}
   .note-banner{background:var(--warn-bg);border:1px solid #ffe0b2;color:var(--warn);border-radius:6px;padding:10px 14px;font-size:12.5px;margin-bottom:16px;}
+
+  .sub-tabs{display:flex;border-bottom:1px solid var(--border);background:#fbfcfd;}
+  .sub-tabs button{
+    appearance:none;border:none;background:none;padding:14px 20px;font-size:13px;font-family:inherit;
+    color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;
+  }
+  .sub-tabs button:hover{color:var(--primary);background:var(--primary-light);}
+  .sub-tabs button.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500;}
 
   .playlist-groups{display:flex;flex-direction:column;gap:14px;}
   .playlist-group{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
@@ -309,7 +324,7 @@ let archiveRows = [
       {type:"Missing LineNumber", detail:"Route 56.135: Liniennummer ist nicht gesetzt.", external:false, resolved:false, skipped:false, tab:"zielcodes", tabLabel:"Zielcodes"},
       {type:"Missing Station Coordinates", detail:"Station 'Reutlingen West': GPS-Koordinaten fehlen.", external:false, resolved:false, skipped:false, tab:"stationen", tabLabel:"Stationen"},
       {type:"Missing Schedule Data", detail:"Fahrplan-Release 2026-08: Abfahrtszeiten für Linie S4 unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
-      {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
+      {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"playlist", tabLabel:"Playlist bearbeiten"},
     ]},
   {datum:"02.07.2026 09:05", typ:"IBIS", status:"fehler", parameter:"INIT 4.12 (aktuell) · Zeitraum 01.09.–30.09.2026",
     errorLog:[
@@ -317,7 +332,7 @@ let archiveRows = [
       {type:"Missing LineNumber", detail:"Route 56.135: Liniennummer ist nicht gesetzt.", external:false, resolved:true, skipped:false, tab:"zielcodes", tabLabel:"Zielcodes"},
       {type:"Missing Station Coordinates", detail:"Station 'Reutlingen West': GPS-Koordinaten fehlen.", external:false, resolved:true, skipped:false, tab:"stationen", tabLabel:"Stationen"},
       {type:"Missing Schedule Data", detail:"Fahrplan-Release 2026-09: Abfahrtszeiten für Linie S7 unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
-      {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:true, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
+      {type:"Missing Announcement", detail:"Station 'Achern': Es ist keine Ansage zugeordnet.", external:false, resolved:true, skipped:false, tab:"playlist", tabLabel:"Playlist bearbeiten"},
     ]},
 ];
 
@@ -428,9 +443,9 @@ let parameterRows = [
 ];
 
 let audioFragmentsRows = [
-  {fragmentNummer:"1", filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage", uploaded:"29.06.2026"},
-  {fragmentNummer:"2", filename:"9941.mp3", beschreibung:"Dunantstraße", uploaded:"29.06.2026"},
-  {fragmentNummer:"3", filename:"VordAnsage_1.mp3", beschreibung:"Vorabansage nächster Halt", uploaded:"20.06.2026"},
+  {fragmentNummer:"1", filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage", uploaded:"29.06.2026", groesse:"142 KB"},
+  {fragmentNummer:"2", filename:"9941.mp3", beschreibung:"Dunantstraße", uploaded:"29.06.2026", groesse:"63 KB"},
+  {fragmentNummer:"3", filename:"VordAnsage_1.mp3", beschreibung:"Vorabansage nächster Halt", uploaded:"20.06.2026", groesse:"88 KB"},
 ];
 let playlistRows = [
   {nummer:"9.941", typ:"Ansage", fragment:1, filename:"9999.mp3", beschreibung:"Türfreigabe-Ansage", titel:"Türfreigabe Dunantstraße"},
@@ -572,15 +587,20 @@ const TABS = [
   {id:"zielcodes", label:"Zielcodes"},
   {id:"zieltexte", label:"Zieltexte"},
   {id:"linientexte", label:"Linientexte"},
-  {id:"ansagen", label:"Ansagen"},
+  {id:"audiodateien", label:"Audiodateien"},
+  {id:"playlist", label:"Playlist bearbeiten"},
   {id:"dispo", label:"Zielcodes Dispo"},
   {id:"parameter", label:"Parameter"},
 ];
 
 const nav=document.getElementById('tabNav');
+nav.style.flexWrap='nowrap';
+nav.style.overflowX='auto';
 TABS.forEach((t,i)=>{
   const b=document.createElement('button');
-  b.textContent=t.label;
+  if(t.icon){ b.textContent=t.icon; b.title=t.label; b.style.fontSize='16px'; }
+  else { b.textContent=t.label; }
+  b.style.flexShrink='0';
   b.dataset.tab=t.id;
   if(i===0) b.classList.add('active');
   b.onclick=()=>selectTab(t.id);
@@ -683,7 +703,7 @@ function startArchive(){
           {type:"Missing LineNumber", detail:"Route 56.135: Liniennummer ist nicht gesetzt.", external:false, resolved:false, skipped:false, tab:"zielcodes", tabLabel:"Zielcodes"},
           {type:"Missing Station Coordinates", detail:"Eine Station hat keine GPS-Koordinaten.", external:false, resolved:false, skipped:false, tab:"stationen", tabLabel:"Stationen"},
           {type:"Missing Schedule Data", detail:"Fahrplan-Release: Abfahrtszeiten unvollständig.", external:true, resolved:false, skipped:false, tab:null, tabLabel:null},
-          {type:"Missing Announcement", detail:"Eine Station hat keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"ansagen", tabLabel:"Ansagen"},
+          {type:"Missing Announcement", detail:"Eine Station hat keine Ansage zugeordnet.", external:false, resolved:false, skipped:false, tab:"playlist", tabLabel:"Playlist bearbeiten"},
         ];
       }
       renderArchiv();
@@ -1143,19 +1163,19 @@ function searchLongTable(viewId){
 renderZieltexte();
 renderLinientexte();
 
-/* ============================= TAB 7: ANSAGEN ============================= */
-function renderAnsagen(){
-  const el=document.getElementById('view-ansagen');
+/* ============================= TAB: AUDIODATEIEN ============================= */
+function renderAudiodateien(){
+  const el=document.getElementById('view-audiodateien');
   el.innerHTML=`
     <div class="panel">
-      <h2>1. Audiofragmente hochladen</h2>
-      <p class="sub">Erst hochladen, danach zu einer Ansage oder Funktionsansage zusammenstellen.</p>
+      <h2>Audiodateien</h2>
+      <p class="sub">Erster Schritt: Audiodatei hochladen. Die Zuordnung zu einer Ansagenummer erfolgt danach in "Playlist bearbeiten".</p>
       <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openAudioUploadDialog()">⬆ Audio hochladen</button></div>
       <table class="data">
-        <thead><tr><th>Fragmentnummer</th><th>Dateiname</th><th>Beschreibung</th><th>Hochgeladen</th><th class="col-actions"></th></tr></thead>
+        <thead><tr><th>Dateiname</th><th>Beschreibung</th><th>Größe</th><th>Hochgeladen</th><th class="col-actions"></th></tr></thead>
         <tbody>
           ${audioFragmentsRows.map((a,i)=>`
-            <tr><td>${a.fragmentNummer}</td><td>${a.filename}</td><td>${a.beschreibung||'—'}</td><td>${a.uploaded}</td>
+            <tr><td>${a.filename}</td><td>${a.beschreibung||'—'}</td><td>${a.groesse||'—'}</td><td>${a.uploaded}</td>
               <td class="col-actions">
                 <button class="icon-btn" title="Abspielen" onclick="toast('Wiedergabe (Demo)')">▶</button>
                 <button class="icon-btn" title="Bearbeiten" onclick="editAudioFragment(${i})">✎</button>
@@ -1164,53 +1184,55 @@ function renderAnsagen(){
         </tbody>
       </table>
     </div>
+  `;
+}
 
+/* ============================= TAB: PLAYLIST BEARBEITEN ============================= */
+function renderPlaylist(){
+  const el=document.getElementById('view-playlist');
+  const groups=groupedPlaylist();
+  el.innerHTML=`
     <div class="panel">
-      <h2>2. Playlist – Ansagen, Funktionsansagen &amp; Notfall</h2>
-      <p class="sub">Kombiniert hochgeladene Audiofragmente zu einer Ansage (sbr.announcements), Funktionsansage oder Notfallansage (beide sbr.announcement_list, feste Nummer). Reihenfolge je Nummer wird über sbr.playlist definiert.</p>
+      <h2>Playlist bearbeiten</h2>
+      <p class="sub">Ansagenummer (sbr.announcements) oder Funktionsansage/Notfall (sbr.announcement_list, feste Nummer) — Reihenfolge der Fragmente je Nummer über sbr.playlist.</p>
       <div class="toolbar"><div class="spacer"></div><button class="btn primary" onclick="openPlaylistComposeDialog()">+ Zu Playlist hinzufügen</button></div>
-      ${groupedPlaylist().length===0 ? `<div class="empty-state">Noch keine Playlist-Einträge.</div>` : `
-      <div class="playlist-groups">
-        ${groupedPlaylist().map(g=>{
-          const key=g.nummer+'|'+g.typ;
-          const open=playlistGroupsExpanded.has(key);
-          const typChip = g.typ==='Notfall' ? 'err' : g.typ==='Funktionsansage' ? 'info' : 'neutral';
-          return `
-          <div class="playlist-group">
-            <div class="playlist-group-header" onclick="togglePlaylistGroup('${key.replace(/'/g,"\\'")}')" style="cursor:pointer;">
-              <span class="errorlog-caret" style="color:#8a94a3;font-size:11px;">${open?'▲':'▼'}</span>
-              <span class="playlist-group-nummer">${g.nummer}</span>
-              <span class="chip ${typChip}">${g.typ}</span>
-              ${g.titel ? `<span class="playlist-group-titel" title="Titel / Hinweis">${g.titel}</span>` : ''}
-              <span class="playlist-group-desc" title="Zusammengesetzt aus: ${g.items.map(it=>it.beschreibung||it.filename).join(', ')}">${g.combinedBeschreibung}</span>
-              <span class="spacer"></span>
-              <button class="icon-btn" title="Abspielen" onclick="event.stopPropagation();toast('Wiedergabe (Demo)')">▶</button>
-              <button class="icon-btn" title="Ganze Kombination bearbeiten" onclick="event.stopPropagation();editPlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">✎</button>
-              <button class="icon-btn danger" title="Ganze Kombination löschen" onclick="event.stopPropagation();deletePlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">🗑</button>
-            </div>
-            ${open?`
-            <table class="data playlist-group-table">
-              <thead><tr><th style="width:70px;">Position</th><th>Dateiname</th><th>Beschreibung</th><th class="col-actions"></th></tr></thead>
-              <tbody>
-                ${g.items.map(it=>`
-                  <tr>
-                    <td>${it.fragment}</td><td>${it.filename}</td><td>${it.beschreibung||'—'}</td>
-                    <td class="col-actions"><button class="icon-btn danger" title="Fragment aus Kombination entfernen" onclick="removeFragmentFromCombo(${it.idx})">🗑</button></td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-            `:''}
-          </div>
-        `;}).join('')}
+      ${groups.length===0 ? `<div class="empty-state">Noch keine Playlist-Einträge.</div>` : `
+      <div style="overflow-x:auto;">
+      <table class="data" style="min-width:900px;">
+        <thead><tr>
+          <th>Ansagenummer</th><th>Beschreibung (255 Zeichen möglich)</th><th>Fragmente</th><th style="width:110px;">Funktionsansage</th><th class="col-actions"></th>
+        </tr></thead>
+        <tbody>
+          ${groups.map(g=>{
+            const checked = g.typ!=='Ansage';
+            return `
+              <tr>
+                <td><b>${g.nummer}</b></td>
+                <td>${g.titel||g.combinedBeschreibung||'—'}</td>
+                <td>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    ${g.items.map(it=>`
+                      <span class="chip neutral" style="display:inline-flex;align-items:center;gap:6px;">
+                        ${it.fragment} · ${it.filename}
+                        <button class="chip-x" title="Fragment entfernen" onclick="removeFragmentFromCombo(${it.idx})">×</button>
+                      </span>
+                    `).join('')}
+                  </div>
+                </td>
+                <td style="text-align:center;"><input type="checkbox" disabled ${checked?'checked':''}></td>
+                <td class="col-actions">
+                  <button class="icon-btn" title="Bearbeiten" onclick="editPlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">✎</button>
+                  <button class="icon-btn danger" title="Ganze Kombination löschen" onclick="deletePlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">🗑</button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
       </div>
       `}
     </div>
   `;
-}
-let playlistGroupsExpanded = new Set(playlistRows.map(p=>p.nummer+'|'+p.typ));
-function togglePlaylistGroup(key){
-  if(playlistGroupsExpanded.has(key)) playlistGroupsExpanded.delete(key); else playlistGroupsExpanded.add(key);
-  renderAnsagen();
 }
 function groupedPlaylist(){
   const groups={};
@@ -1227,7 +1249,7 @@ function groupedPlaylist(){
 }
 function deletePlaylistCombo(nummer, typ){
   playlistRows = playlistRows.filter(p=>!(p.nummer===nummer && p.typ===typ));
-  renderAnsagen();
+  renderAudiodateien(); renderPlaylist();
   toast('Kombination gelöscht');
 }
 function removeFragmentFromCombo(idx){
@@ -1236,7 +1258,7 @@ function removeFragmentFromCombo(idx){
   playlistRows.filter(p=>p.nummer===removed.nummer && p.typ===removed.typ)
     .sort((a,b)=>a.fragment-b.fragment)
     .forEach((p,i)=>{ p.fragment=i+1; });
-  renderAnsagen();
+  renderAudiodateien(); renderPlaylist();
   toast('Fragment aus Kombination entfernt');
 }
 function openAudioUploadDialog(){
@@ -1269,22 +1291,37 @@ function toggleAudioModeFields(){
   const mode=document.getElementById('audioMode').value;
   document.getElementById('existingFilenameRow').style.display = mode==='existing' ? 'block' : 'none';
 }
+function formatBytes(bytes){
+  if(!bytes && bytes!==0) return '—';
+  if(bytes<1024) return bytes+' B';
+  return Math.round(bytes/1024)+' KB';
+}
 function confirmAudioUpload(){
   const fileInput=document.getElementById('audioFile');
   const mode=document.getElementById('audioMode').value;
   const beschreibung=document.getElementById('audioBeschreibung').value || '';
   const now=new Date().toLocaleDateString('de-DE');
+  const chosenFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
   if(mode==='existing'){
     const filename=document.getElementById('audioExistingFile').value;
     const idx=audioFragmentsRows.findIndex(a=>a.filename===filename);
-    if(idx>-1){ audioFragmentsRows[idx]={fragmentNummer: audioFragmentsRows[idx].fragmentNummer, filename, beschreibung: beschreibung||audioFragmentsRows[idx].beschreibung, uploaded:now}; }
-    closeModal(); renderAnsagen();
+    if(idx>-1){
+      audioFragmentsRows[idx]={
+        fragmentNummer: audioFragmentsRows[idx].fragmentNummer,
+        filename,
+        beschreibung: beschreibung||audioFragmentsRows[idx].beschreibung,
+        uploaded:now,
+        groesse: chosenFile ? formatBytes(chosenFile.size) : audioFragmentsRows[idx].groesse,
+      };
+    }
+    closeModal(); renderAudiodateien(); renderPlaylist();
     toast('Bestehende Datei ersetzt (Demo): '+filename);
   } else {
-    const filename = fileInput.files && fileInput.files[0] ? fileInput.files[0].name : 'neue_datei_'+(audioFragmentsRows.length+1)+'.mp3';
+    const filename = chosenFile ? chosenFile.name : 'neue_datei_'+(audioFragmentsRows.length+1)+'.mp3';
     const fragmentNummer = nextFragmentNummer();
-    audioFragmentsRows.unshift({fragmentNummer, filename, beschreibung, uploaded:now});
-    closeModal(); renderAnsagen();
+    const groesse = chosenFile ? formatBytes(chosenFile.size) : (Math.round(40+Math.random()*100))+' KB';
+    audioFragmentsRows.unshift({fragmentNummer, filename, beschreibung, uploaded:now, groesse});
+    closeModal(); renderAudiodateien(); renderPlaylist();
     toast('Audio hochgeladen (Demo): '+filename);
   }
 }
@@ -1292,7 +1329,7 @@ function nextFragmentNummer(){
   const nums=audioFragmentsRows.map(a=>parseInt(a.fragmentNummer)||0);
   return String((nums.length?Math.max(...nums):0)+1);
 }
-function deleteAudioFragment(i){ audioFragmentsRows.splice(i,1); renderAnsagen(); toast('Audiofragment gelöscht'); }
+function deleteAudioFragment(i){ audioFragmentsRows.splice(i,1); renderAudiodateien(); renderPlaylist(); toast('Audiofragment gelöscht'); }
 function editAudioFragment(i){
   const a=audioFragmentsRows[i];
   openModal(`
@@ -1301,9 +1338,10 @@ function editAudioFragment(i){
     <div class="field-row"><label>Dateiname</label><input type="text" id="ea_filename" value="${a.filename}"></div>
     <div class="field-row">
       <label>Neue MP3 hochladen (ersetzt aktuelle Datei)</label>
-      <input type="file" id="ea_file" accept="audio/*" onchange="if(this.files[0]) document.getElementById('ea_filename').value=this.files[0].name">
+      <input type="file" id="ea_file" accept="audio/*" onchange="if(this.files[0]){ document.getElementById('ea_filename').value=this.files[0].name; document.getElementById('ea_groesse').value=formatBytes(this.files[0].size); }">
       <div class="hint">Optional — leer lassen, um die bestehende Datei zu behalten.</div>
     </div>
+    <div class="field-row"><label>Größe</label><input type="text" id="ea_groesse" value="${a.groesse||''}"></div>
     <div class="field-row"><label>Beschreibung</label><input type="text" id="ea_beschreibung" value="${a.beschreibung||''}"></div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
@@ -1318,11 +1356,12 @@ function saveAudioFragment(i){
   const newFilename=uploadedName || document.getElementById('ea_filename').value;
   audioFragmentsRows[i].fragmentNummer=document.getElementById('ea_fragmentNummer').value;
   audioFragmentsRows[i].filename=newFilename;
+  audioFragmentsRows[i].groesse=document.getElementById('ea_groesse').value;
   audioFragmentsRows[i].beschreibung=document.getElementById('ea_beschreibung').value;
   if(uploadedName) audioFragmentsRows[i].uploaded=new Date().toLocaleDateString('de-DE');
   playlistRows.forEach(p=>{ if(p.filename===oldFilename) p.filename=newFilename; });
   closeModal();
-  renderAnsagen();
+  renderAudiodateien(); renderPlaylist();
   toast(uploadedName ? 'Neue MP3 hochgeladen und gespeichert (Demo): '+newFilename : 'Audiofragment gespeichert');
 }
 let composeFragments = [];
@@ -1407,13 +1446,12 @@ function confirmPlaylistCompose(){
     const frag=audioFragmentsRows.find(a=>a.filename===filename);
     playlistRows.push({nummer, typ, fragment: idx+1, filename, beschreibung: frag?frag.beschreibung:'', titel});
   });
-  playlistGroupsExpanded.add(nummer+'|'+typ);
   closeModal();
-  renderAnsagen();
+  renderAudiodateien(); renderPlaylist();
   toast(composeEditKey ? 'Kombination gespeichert' : `Kombination mit ${filenames.length} Fragment(en) zur Playlist hinzugefügt (Demo)`);
   composeEditKey = null;
 }
-function deletePlaylistRow(i){ playlistRows.splice(i,1); renderAnsagen(); toast('Fragment gelöscht'); }
+function deletePlaylistRow(i){ playlistRows.splice(i,1); renderAudiodateien(); renderPlaylist(); toast('Fragment gelöscht'); }
 function editPlaylistCombo(nummer, typ){
   const items=playlistRows.filter(p=>p.nummer===nummer && p.typ===typ).sort((a,b)=>a.fragment-b.fragment);
   composeFragments = items.map(it=>({filename:it.filename, beschreibung:it.beschreibung}));
@@ -1423,7 +1461,7 @@ function editPlaylistCombo(nummer, typ){
   document.getElementById('pl_typ').value=typ;
   document.getElementById('pl_nummer').value=nummer;
 }
-renderAnsagen();
+renderAudiodateien(); renderPlaylist();
 
 /* ============================= TAB 8: ZIELCODES DISPO ============================= */
 function renderDispo(){
