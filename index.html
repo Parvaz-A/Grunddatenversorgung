@@ -1244,7 +1244,6 @@ function renderPlaylist(){
                       return `
                       <span class="chip neutral" style="display:inline-flex;align-items:center;gap:6px;" title="Position ${it.fragment} · Fragmentnummer ${libNum}">
                         ${libNum} · ${it.filename}
-                        <button class="chip-x" title="Fragment entfernen" onclick="removeFragmentFromCombo(${it.idx})">×</button>
                       </span>
                     `;}).join('')}
                   </div>
@@ -1252,6 +1251,7 @@ function renderPlaylist(){
                 <td style="text-align:center;"><input type="checkbox" disabled ${checked?'checked':''}></td>
                 <td class="col-actions">
                   <button class="icon-btn" title="Bearbeiten" onclick="editPlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">✎</button>
+                  <button class="icon-btn danger" title="Ganze Kombination löschen" onclick="deletePlaylistCombo('${g.nummer.replace(/'/g,"\\'")}','${g.typ}')">🗑</button>
                 </td>
               </tr>
             `;
